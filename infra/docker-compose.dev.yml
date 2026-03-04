@@ -1,0 +1,155 @@
+version: '3.9'
+
+# MealStack Platform – local development
+#
+# Usage:
+#   docker-compose -f infra/docker-compose.dev.yml up --build
+#
+# Prerequisites:
+#   - Copy .env.example to .env inside each service folder and fill in values.
+#   - MongoDB: NOT containerised here – each service connects to MongoDB Atlas
+#     via the MONGO_URI variable in its .env file.
+#
+# Note on circular dependency (order <-> payment):
+#   At runtime, Order calls Payment to create Stripe sessions, and Payment
+#   calls Order back via webhook. Docker Compose does not allow circular
+#   depends_on chains, so Payment has no depends_on. The Order service uses
+#   basic retry logic when calling Payment at startup.
+
+services:
+
+  # ─────────────────────────────────────────────
+  # Auth Service – port 4001
+  # ─────────────────────────────────────────────
+  auth:
+    build:
+      context: ../services/auth
+      dockerfile: Dockerfile
+    container_name: mealstack_auth
+    restart: unless-stopped
+    ports:
+      - '4001:4001'
+    env_file:
+      - ../services/auth/.env
+    environment:
+      PORT: 4001
+      NODE_ENV: development
+    healthcheck:
+      test: ['CMD', 'wget', '--quiet', '--tries=1', '--spider', 'http://localhost:4001/health']
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # ─────────────────────────────────────────────
+  # Restaurant Service – port 4002
+  # ─────────────────────────────────────────────
+  restaurant:
+    build:
+      context: ../services/restaurant
+      dockerfile: Dockerfile
+    container_name: mealstack_restaurant
+    restart: unless-stopped
+    ports:
+      - '4002:4002'
+    env_file:
+      - ../services/restaurant/.env
+    environment:
+      PORT: 4002
+      NODE_ENV: development
+    healthcheck:
+      test: ['CMD', 'wget', '--quiet', '--tries=1', '--spider', 'http://localhost:4002/health']
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # ─────────────────────────────────────────────
+  # Rider Service – port 4005
+  # ─────────────────────────────────────────────
+  rider:
+    build:
+      context: ../services/rider
+      dockerfile: Dockerfile
+    container_name: mealstack_rider
+    restart: unless-stopped
+    ports:
+      - '4005:4005'
+    env_file:
+      - ../services/rider/.env
+    environment:
+      PORT: 4005
+      NODE_ENV: development
+      ORDER_SERVICE_URL: http://order:4003
+    healthcheck:
+      test: ['CMD', 'wget', '--quiet', '--tries=1', '--spider', 'http://localhost:4005/health']
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # ─────────────────────────────────────────────
+  # Payment Service – port 4004
+  # ─────────────────────────────────────────────
+  # No depends_on here to avoid a circular dependency:
+  #   Order → Payment (create checkout session)
+  #   Payment → Order (webhook callback)
+  # Payment will start independently; Order uses retry logic.
+  # ─────────────────────────────────────────────
+  payment:
+    build:
+      context: ../services/payment
+      dockerfile: Dockerfile
+    container_name: mealstack_payment
+    restart: unless-stopped
+    ports:
+      - '4004:4004'
+    env_file:
+      - ../services/payment/.env
+    environment:
+      PORT: 4004
+      NODE_ENV: development
+      ORDER_SERVICE_URL: http://order:4003
+    healthcheck:
+      test: ['CMD', 'wget', '--quiet', '--tries=1', '--spider', 'http://localhost:4004/health']
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # ─────────────────────────────────────────────
+  # Order Service – port 4003
+  # ─────────────────────────────────────────────
+  # Depends on auth, restaurant, and rider being healthy before starting.
+  # Payment is not listed here (see note above); Order retries on payment calls.
+  # ─────────────────────────────────────────────
+  order:
+    build:
+      context: ../services/order
+      dockerfile: Dockerfile
+    container_name: mealstack_order
+    restart: unless-stopped
+    ports:
+      - '4003:4003'
+    env_file:
+      - ../services/order/.env
+    environment:
+      PORT: 4003
+      NODE_ENV: development
+      AUTH_SERVICE_URL: http://auth:4001
+      RESTAURANT_SERVICE_URL: http://restaurant:4002
+      PAYMENT_SERVICE_URL: http://payment:4004
+      RIDER_SERVICE_URL: http://rider:4005
+    depends_on:
+      auth:
+        condition: service_healthy
+      restaurant:
+        condition: service_healthy
+      rider:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'wget', '--quiet', '--tries=1', '--spider', 'http://localhost:4003/health']
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s

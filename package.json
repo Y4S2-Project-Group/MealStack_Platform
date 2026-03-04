@@ -1,0 +1,27 @@
+{
+  "name": "mealstack-platform",
+  "version": "1.0.0",
+  "description": "MealStack Platform – cloud-native food ordering microservices (MERN/Express, Azure Container Apps)",
+  "private": true,
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "workspaces": [
+    "services/auth",
+    "services/restaurant",
+    "services/order",
+    "services/payment",
+    "services/rider",
+    "shared"
+  ],
+  "scripts": {
+    "lint": "eslint \"services/**/*.js\" \"shared/**/*.js\"",
+    "lint:fix": "eslint \"services/**/*.js\" \"shared/**/*.js\" --fix",
+    "format": "prettier --write \"services/**/*.js\" \"shared/**/*.js\"",
+    "docker:dev": "docker-compose -f infra/docker-compose.dev.yml up --build"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.0",
+    "prettier": "^3.2.5"
+  }
+}

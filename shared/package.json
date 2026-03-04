@@ -1,0 +1,10 @@
+{
+  "name": "@mealstack/shared",
+  "version": "1.0.0",
+  "description": "Shared middleware and utilities for MealStack microservices",
+  "main": "index.js",
+  "private": true,
+  "dependencies": {
+    "jsonwebtoken": "^9.0.2"
+  }
+}
