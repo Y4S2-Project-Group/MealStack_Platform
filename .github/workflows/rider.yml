@@ -34,10 +34,7 @@ jobs:
         run: npm test --workspace=services/rider
 
       - name: Run Snyk security scan
-        working-directory: services/rider
-        run: |
-          npm ci
-          npx snyk test --severity-threshold=critical
+        run: npx snyk test --severity-threshold=critical --file=services/rider/package.json
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
