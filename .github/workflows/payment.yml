@@ -34,7 +34,10 @@ jobs:
         run: npm test --workspace=services/payment
 
       - name: Run Snyk security scan
-        run: npx snyk test --severity-threshold=critical --file=services/payment/package.json
+        working-directory: services/payment
+        run: |
+          npm ci
+          npx snyk test --severity-threshold=critical
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
