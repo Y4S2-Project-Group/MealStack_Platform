@@ -4,13 +4,13 @@ on:
   push:
     branches: [main]
     paths:
-      - 'services/auth/**'
-      - '.github/workflows/auth.yml'
+      - "services/auth/**"
+      - ".github/workflows/auth.yml"
   pull_request:
     branches: [main]
     paths:
-      - 'services/auth/**'
-      - '.github/workflows/auth.yml'
+      - "services/auth/**"
+      - ".github/workflows/auth.yml"
 
 jobs:
   ci:
@@ -24,8 +24,8 @@ jobs:
       - name: Setup Node.js 22
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: 'npm'
+          node-version: "22"
+          cache: "npm"
 
       - name: Install dependencies
         run: npm ci
@@ -34,11 +34,9 @@ jobs:
         run: npm test --workspace=services/auth
 
       - name: Run Snyk security scan
-        uses: snyk/actions/node@master
+        run: npx snyk test --fail-on=critical --file=services/auth/package.json
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          args: --fail-on=critical --file=services/auth/package.json
 
   cd:
     name: Build & Deploy
