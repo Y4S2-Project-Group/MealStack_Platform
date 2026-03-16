@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  rider-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mealstack-rider-backend
+    restart: unless-stopped
+    ports:
+      - "3004:3004"
+    environment:
+      PORT: 3004
+      NODE_ENV: production
+      MONGO_URI: ${MONGO_URI:-mongodb+srv://shiramianoma:fbvwGfvisio9xHR0@cluster0.9vniycs.mongodb.net/BuyNest?retryWrites=true&w=majority&appName=Cluster0}
+      JWT_SECRET: ${JWT_SECRET:-mealstack_rider_jwt_secret_key_2024_change_in_production}
+      RESTAURANT_SERVICE_URL: ${RESTAURANT_SERVICE_URL:-http://restaurant-service:3001}
+      CUSTOMER_SERVICE_URL: ${CUSTOMER_SERVICE_URL:-http://customer-service:3002}
+      PAYMENT_SERVICE_URL: ${PAYMENT_SERVICE_URL:-http://payment-service:3003}
+      ORDER_SERVICE_URL: ${ORDER_SERVICE_URL:-http://order-service:4003}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:-dev-internal-key-change-me}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+    networks:
+      - mealstack-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3004/health', r => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  rider-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: mealstack-rider-frontend
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    depends_on:
+      rider-backend:
+        condition: service_healthy
+    networks:
+      - mealstack-network
+
+networks:
+  mealstack-network:
+    driver: bridge
+    name: mealstack-network
