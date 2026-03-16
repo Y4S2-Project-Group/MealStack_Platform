@@ -1,6 +1,7 @@
 'use strict';
 
 const jwt = require('jsonwebtoken');
+const { sendError } = require('../utils/apiResponse');
 
 /**
  * JWT authentication middleware.
@@ -25,8 +26,9 @@ function requireAuth(req, res, next) {
   const authHeader = req.headers['authorization'] || req.headers['Authorization'];
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({
-      success: false,
+    return sendError(res, req, {
+      status: 401,
+      code: 'UNAUTHORIZED',
       message: 'No token provided. Authorization header must be: Bearer <token>',
     });
   }
@@ -34,8 +36,9 @@ function requireAuth(req, res, next) {
   const token = authHeader.split(' ')[1];
 
   if (!token) {
-    return res.status(401).json({
-      success: false,
+    return sendError(res, req, {
+      status: 401,
+      code: 'UNAUTHORIZED',
       message: 'Malformed authorization header.',
     });
   }
@@ -51,7 +54,11 @@ function requireAuth(req, res, next) {
     } else if (err.name === 'JsonWebTokenError') {
       message = 'Token is invalid.';
     }
-    return res.status(401).json({ success: false, message });
+    return sendError(res, req, {
+      status: 401,
+      code: 'UNAUTHORIZED',
+      message,
+    });
   }
 }
 

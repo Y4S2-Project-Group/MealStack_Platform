@@ -10,9 +10,21 @@
  */
 
 const logger        = require('./utils/logger');
+const apiResponse   = require('./utils/apiResponse');
 const errorHandler  = require('./middleware/errorHandler');
 const notFound      = require('./middleware/notFound');
+const requestContext = require('./middleware/requestContext');
+const contractVersionHeader = require('./middleware/contractVersionHeader');
 const requireAuth   = require('./middleware/requireAuth');
 const requireRole   = require('./middleware/requireRole');
 
-module.exports = { logger, errorHandler, notFound, requireAuth, requireRole };
+module.exports = {
+	logger,
+	apiResponse,
+	errorHandler,
+	notFound,
+	requestContext,
+	contractVersionHeader,
+	requireAuth,
+	requireRole,
+};

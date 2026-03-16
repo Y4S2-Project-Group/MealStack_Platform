@@ -1,5 +1,7 @@
 'use strict';
 
+const { sendError } = require('../utils/apiResponse');
+
 /**
  * Role-based access control middleware factory.
  *
@@ -23,8 +25,9 @@ function requireRole(...roles) {
 
   return function roleGuard(req, res, next) {
     if (!req.user) {
-      return res.status(401).json({
-        success: false,
+      return sendError(res, req, {
+        status: 401,
+        code: 'UNAUTHORIZED',
         message: 'Unauthenticated. requireAuth must precede requireRole.',
       });
     }
@@ -32,8 +35,9 @@ function requireRole(...roles) {
     const userRole = req.user.role;
 
     if (!roles.includes(userRole)) {
-      return res.status(403).json({
-        success: false,
+      return sendError(res, req, {
+        status: 403,
+        code: 'FORBIDDEN',
         message: `Access denied. Required role(s): ${roles.join(', ')}. Your role: ${userRole}.`,
       });
     }
