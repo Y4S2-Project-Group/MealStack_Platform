@@ -4,6 +4,7 @@ const { Router } = require('express');
 
 const requireAuth    = require('../../../../shared/middleware/requireAuth');
 const requireRole    = require('../../../../shared/middleware/requireRole');
+const { sendSuccess, sendError } = require('../../../../shared/utils/apiResponse');
 const env            = require('../config/env');
 const deliveryCtrl   = require('../controllers/deliveryController');
 
@@ -13,14 +14,23 @@ const router = Router();
 function requireInternalKey(req, res, next) {
   const key = req.headers['x-internal-key'];
   if (!key || key !== env.internalApiKey) {
-    return res.status(401).json({ success: false, message: 'Missing or invalid internal API key' });
+    return sendError(res, req, {
+      status: 401,
+      code: 'UNAUTHORIZED_INTERNAL_KEY',
+      message: 'Missing or invalid internal API key',
+    });
   }
   next();
 }
 
 // ── Health ───────────────────────────────────────────────────────────────────
 router.get('/health', (_req, res) => {
-  res.status(200).json({ status: 'ok', service: 'rider' });
+  return sendSuccess(res, _req, {
+    status: 200,
+    message: 'Rider service healthy',
+    data: { status: 'ok', service: 'rider' },
+    legacy: { status: 'ok', service: 'rider' },
+  });
 });
 
 // ── Internal: create delivery job (called by Order Service) ──────────────────

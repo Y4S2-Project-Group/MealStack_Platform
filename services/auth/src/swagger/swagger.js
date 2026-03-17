@@ -6,15 +6,23 @@ const spec = {
   openapi: '3.0.3',
   info: {
     title: 'MealStack Auth Service',
-    version: '1.0.0',
-    description: 'User registration, login, JWT issuance and profile retrieval.',
+    version: '1.1.0',
+    description: 'User registration, login, JWT issuance, and profile retrieval.',
   },
-  servers: [{ url: 'http://localhost:4001', description: 'Local dev' }],
+  servers: [{ url: 'http://localhost:4001', description: 'Local development' }],
   components: {
     securitySchemes: {
       bearerAuth: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
     },
     schemas: {
+      Meta: {
+        type: 'object',
+        required: ['timestamp', 'traceId'],
+        properties: {
+          timestamp: { type: 'string', format: 'date-time', example: '2026-03-20T03:00:00.000Z' },
+          traceId: { type: 'string', example: '7f8d9a8c-1d2e-4f45-9bb7-4c5f8f2de101' },
+        },
+      },
       UserRole: {
         type: 'string',
         enum: ['customer', 'restaurantAdmin', 'rider'],
@@ -23,44 +31,106 @@ const spec = {
       User: {
         type: 'object',
         properties: {
-          _id:       { type: 'string', example: '6650a1c2fbe3a4001c8b4567' },
-          name:      { type: 'string',  example: 'Jane Doe' },
-          email:     { type: 'string',  format: 'email', example: 'jane@example.com' },
-          role:      { $ref: '#/components/schemas/UserRole' },
-          createdAt: { type: 'string',  format: 'date-time' },
-          updatedAt: { type: 'string',  format: 'date-time' },
+          _id: { type: 'string', example: '6650a1c2fbe3a4001c8b4567' },
+          name: { type: 'string', example: 'Jane Doe' },
+          email: { type: 'string', format: 'email', example: 'jane@example.com' },
+          role: { $ref: '#/components/schemas/UserRole' },
+          createdAt: { type: 'string', format: 'date-time' },
+          updatedAt: { type: 'string', format: 'date-time' },
         },
       },
-      AuthResponse: {
+      AuthData: {
+        type: 'object',
+        required: ['token', 'user'],
+        properties: {
+          token: {
+            type: 'string',
+            description: 'Signed JWT. Send as Authorization: Bearer <token>.',
+            example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+          },
+          user: { $ref: '#/components/schemas/User' },
+        },
+      },
+      UserData: {
+        type: 'object',
+        required: ['user'],
+        properties: {
+          user: { $ref: '#/components/schemas/User' },
+        },
+      },
+      ValidationIssue: {
         type: 'object',
         properties: {
-          success: { type: 'boolean', example: true },
-          token:   { type: 'string',  description: 'Signed JWT (7d expiry). Use as: Authorization: Bearer <token>' },
-          user:    { $ref: '#/components/schemas/User' },
+          field: { type: 'string', example: 'email' },
+          message: { type: 'string', example: 'Must be a valid email address' },
         },
       },
-      ValidationError: {
+      ApiError: {
         type: 'object',
+        required: ['success', 'message', 'error', 'meta'],
         properties: {
           success: { type: 'boolean', example: false },
-          message: { type: 'string',  example: 'Validation failed' },
-          errors: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                field:   { type: 'string', example: 'email' },
-                message: { type: 'string', example: 'Must be a valid email address' },
+          message: { type: 'string', example: 'Validation failed' },
+          error: {
+            type: 'object',
+            properties: {
+              code: { type: 'string', example: 'VALIDATION_ERROR' },
+              details: {
+                oneOf: [
+                  { type: 'null' },
+                  { type: 'array', items: { $ref: '#/components/schemas/ValidationIssue' } },
+                  { type: 'object' },
+                ],
               },
             },
           },
+          meta: { $ref: '#/components/schemas/Meta' },
+          errors: {
+            type: 'array',
+            items: { $ref: '#/components/schemas/ValidationIssue' },
+            description: 'Legacy compatibility field.',
+          },
         },
       },
-      Error: {
+      AuthSuccessEnvelope: {
         type: 'object',
+        required: ['success', 'message', 'data', 'meta'],
         properties: {
-          success: { type: 'boolean', example: false },
-          message: { type: 'string' },
+          success: { type: 'boolean', example: true },
+          message: { type: 'string', example: 'Login successful' },
+          data: { $ref: '#/components/schemas/AuthData' },
+          meta: { $ref: '#/components/schemas/Meta' },
+          token: { type: 'string', description: 'Legacy compatibility field.' },
+          user: { $ref: '#/components/schemas/User' },
+        },
+      },
+      UserSuccessEnvelope: {
+        type: 'object',
+        required: ['success', 'message', 'data', 'meta'],
+        properties: {
+          success: { type: 'boolean', example: true },
+          message: { type: 'string', example: 'User profile fetched' },
+          data: { $ref: '#/components/schemas/UserData' },
+          meta: { $ref: '#/components/schemas/Meta' },
+          user: { $ref: '#/components/schemas/User' },
+        },
+      },
+      HealthSuccessEnvelope: {
+        type: 'object',
+        required: ['success', 'message', 'data', 'meta'],
+        properties: {
+          success: { type: 'boolean', example: true },
+          message: { type: 'string', example: 'Auth service healthy' },
+          data: {
+            type: 'object',
+            properties: {
+              status: { type: 'string', example: 'ok' },
+              service: { type: 'string', example: 'auth' },
+            },
+          },
+          meta: { $ref: '#/components/schemas/Meta' },
+          status: { type: 'string', description: 'Legacy compatibility field.' },
+          service: { type: 'string', description: 'Legacy compatibility field.' },
         },
       },
     },
@@ -75,13 +145,7 @@ const spec = {
             description: 'Service is healthy',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    status:  { type: 'string', example: 'ok' },
-                    service: { type: 'string', example: 'auth' },
-                  },
-                },
+                schema: { $ref: '#/components/schemas/HealthSuccessEnvelope' },
               },
             },
           },
@@ -92,7 +156,6 @@ const spec = {
       post: {
         tags: ['Auth'],
         summary: 'Register a new user',
-        description: 'Creates an account, hashes the password with bcrypt, and returns a signed JWT.',
         requestBody: {
           required: true,
           content: {
@@ -101,10 +164,10 @@ const spec = {
                 type: 'object',
                 required: ['name', 'email', 'password'],
                 properties: {
-                  name:     { type: 'string', example: 'Jane Doe' },
-                  email:    { type: 'string', format: 'email', example: 'jane@example.com' },
+                  name: { type: 'string', example: 'Jane Doe' },
+                  email: { type: 'string', format: 'email', example: 'jane@example.com' },
                   password: { type: 'string', minLength: 8, example: 'SecurePass1' },
-                  role:     { $ref: '#/components/schemas/UserRole' },
+                  role: { $ref: '#/components/schemas/UserRole' },
                 },
               },
             },
@@ -113,15 +176,27 @@ const spec = {
         responses: {
           201: {
             description: 'User registered successfully',
-            content: { 'application/json': { schema: { $ref: '#/components/schemas/AuthResponse' } } },
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/AuthSuccessEnvelope' },
+              },
+            },
           },
           400: {
-            description: 'Validation error',
-            content: { 'application/json': { schema: { $ref: '#/components/schemas/ValidationError' } } },
+            description: 'Validation failed',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ApiError' },
+              },
+            },
           },
           409: {
             description: 'Email already registered',
-            content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ApiError' },
+              },
+            },
           },
         },
       },
@@ -138,7 +213,7 @@ const spec = {
                 type: 'object',
                 required: ['email', 'password'],
                 properties: {
-                  email:    { type: 'string', format: 'email', example: 'jane@example.com' },
+                  email: { type: 'string', format: 'email', example: 'jane@example.com' },
                   password: { type: 'string', example: 'SecurePass1' },
                 },
               },
@@ -148,15 +223,27 @@ const spec = {
         responses: {
           200: {
             description: 'Login successful',
-            content: { 'application/json': { schema: { $ref: '#/components/schemas/AuthResponse' } } },
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/AuthSuccessEnvelope' },
+              },
+            },
           },
           400: {
-            description: 'Validation error',
-            content: { 'application/json': { schema: { $ref: '#/components/schemas/ValidationError' } } },
+            description: 'Validation failed',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ApiError' },
+              },
+            },
           },
           401: {
             description: 'Invalid credentials',
-            content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ApiError' },
+              },
+            },
           },
         },
       },
@@ -164,30 +251,32 @@ const spec = {
     '/users/me': {
       get: {
         tags: ['Users'],
-        summary: 'Get the currently authenticated user\'s profile',
+        summary: 'Get current authenticated user profile',
         security: [{ bearerAuth: [] }],
         responses: {
           200: {
-            description: 'User profile',
+            description: 'User profile returned',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    success: { type: 'boolean', example: true },
-                    user:    { $ref: '#/components/schemas/User' },
-                  },
-                },
+                schema: { $ref: '#/components/schemas/UserSuccessEnvelope' },
               },
             },
           },
           401: {
             description: 'Missing or invalid Authorization header',
-            content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ApiError' },
+              },
+            },
           },
           404: {
             description: 'User not found',
-            content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ApiError' },
+              },
+            },
           },
         },
       },

@@ -5,16 +5,20 @@ const { createDeliverySchema,
         updateDeliveryStatusSchema }               = require('../middleware/validate');
 const { notifyDeliveryStatus }                     = require('../services/orderClient');
 const logger                                       = require('../../../../shared/utils/logger');
+const { sendSuccess, sendError } = require('../../../../shared/utils/apiResponse');
 
 // ── POST /deliveries  (internal – called by Order Service) ───────────────────
 async function createDelivery(req, res, next) {
   try {
     const parsed = createDeliverySchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({
-        success: false,
+      const errors = parsed.error.errors.map((e) => ({ field: e.path.join('.'), message: e.message }));
+      return sendError(res, req, {
+        status: 400,
+        code: 'VALIDATION_ERROR',
         message: 'Validation failed',
-        errors:  parsed.error.errors.map((e) => ({ field: e.path.join('.'), message: e.message })),
+        details: errors,
+        legacy: { errors },
       });
     }
 
@@ -23,24 +27,39 @@ async function createDelivery(req, res, next) {
     // Idempotent: return existing delivery if already created
     const existing = await Delivery.findOne({ orderId });
     if (existing) {
-      return res.status(200).json({ success: true, delivery: existing });
+      return sendSuccess(res, req, {
+        status: 200,
+        message: 'Delivery job already exists',
+        data: { delivery: existing },
+        legacy: { delivery: existing },
+      });
     }
 
     const delivery = await Delivery.create({ orderId, restaurantId, customerId });
 
     logger.info('[rider] Delivery job created', { orderId, deliveryId: delivery._id });
 
-    return res.status(201).json({ success: true, delivery });
+    return sendSuccess(res, req, {
+      status: 201,
+      message: 'Delivery job created',
+      data: { delivery },
+      legacy: { delivery },
+    });
   } catch (err) {
     next(err);
   }
 }
 
 // ── GET /deliveries/available  (rider JWT) ────────────────────────────────────
-async function listAvailable(_req, res, next) {
+async function listAvailable(req, res, next) {
   try {
     const deliveries = await Delivery.find({ status: 'AVAILABLE' }).sort({ createdAt: 1 });
-    return res.status(200).json({ success: true, deliveries });
+    return sendSuccess(res, req, {
+      status: 200,
+      message: 'Available deliveries fetched',
+      data: { deliveries },
+      legacy: { deliveries },
+    });
   } catch (err) {
     next(err);
   }
@@ -52,12 +71,17 @@ async function acceptDelivery(req, res, next) {
     const delivery = await Delivery.findOne({ orderId: req.params.orderId });
 
     if (!delivery) {
-      return res.status(404).json({ success: false, message: 'Delivery job not found' });
+      return sendError(res, req, {
+        status: 404,
+        code: 'DELIVERY_NOT_FOUND',
+        message: 'Delivery job not found',
+      });
     }
 
     if (delivery.status !== 'AVAILABLE') {
-      return res.status(409).json({
-        success: false,
+      return sendError(res, req, {
+        status: 409,
+        code: 'DELIVERY_NOT_AVAILABLE',
         message: `Delivery is not available (current status: ${delivery.status})`,
       });
     }
@@ -71,7 +95,12 @@ async function acceptDelivery(req, res, next) {
       riderId:  delivery.riderId,
     });
 
-    return res.status(200).json({ success: true, delivery });
+    return sendSuccess(res, req, {
+      status: 200,
+      message: 'Delivery accepted',
+      data: { delivery },
+      legacy: { delivery },
+    });
   } catch (err) {
     next(err);
   }
@@ -82,10 +111,13 @@ async function updateStatus(req, res, next) {
   try {
     const parsed = updateDeliveryStatusSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({
-        success: false,
+      const errors = parsed.error.errors.map((e) => ({ field: e.path.join('.'), message: e.message }));
+      return sendError(res, req, {
+        status: 400,
+        code: 'VALIDATION_ERROR',
         message: 'Validation failed',
-        errors:  parsed.error.errors.map((e) => ({ field: e.path.join('.'), message: e.message })),
+        details: errors,
+        legacy: { errors },
       });
     }
 
@@ -93,12 +125,17 @@ async function updateStatus(req, res, next) {
     const delivery = await Delivery.findOne({ orderId: req.params.orderId });
 
     if (!delivery) {
-      return res.status(404).json({ success: false, message: 'Delivery job not found' });
+      return sendError(res, req, {
+        status: 404,
+        code: 'DELIVERY_NOT_FOUND',
+        message: 'Delivery job not found',
+      });
     }
 
     if (delivery.riderId !== req.user.userId) {
-      return res.status(403).json({
-        success: false,
+      return sendError(res, req, {
+        status: 403,
+        code: 'FORBIDDEN',
         message: 'You are not the assigned rider for this delivery',
       });
     }
@@ -121,7 +158,12 @@ async function updateStatus(req, res, next) {
       });
     }
 
-    return res.status(200).json({ success: true, delivery });
+    return sendSuccess(res, req, {
+      status: 200,
+      message: 'Delivery status updated',
+      data: { delivery },
+      legacy: { delivery },
+    });
   } catch (err) {
     next(err);
   }

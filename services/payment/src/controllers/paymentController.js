@@ -6,16 +6,20 @@ const { createCheckoutSession,
         verifyWebhookEvent }       = require('../services/stripeClient');
 const { confirmOrderPayment }      = require('../services/orderClient');
 const logger                       = require('../../../../shared/utils/logger');
+const { sendSuccess, sendError } = require('../../../../shared/utils/apiResponse');
 
 // ── POST /payments/checkout-session ──────────────────────────────────────────
 async function checkoutSession(req, res, next) {
   try {
     const parsed = createCheckoutSessionSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({
-        success: false,
+      const errors = parsed.error.errors.map((e) => ({ field: e.path.join('.'), message: e.message }));
+      return sendError(res, req, {
+        status: 400,
+        code: 'VALIDATION_ERROR',
         message: 'Validation failed',
-        errors:  parsed.error.errors.map((e) => ({ field: e.path.join('.'), message: e.message })),
+        details: errors,
+        legacy: { errors },
       });
     }
 
@@ -23,7 +27,12 @@ async function checkoutSession(req, res, next) {
 
     const { sessionId, checkoutUrl } = await createCheckoutSession(orderId, amount, currency);
 
-    return res.status(200).json({ success: true, sessionId, checkoutUrl });
+    return sendSuccess(res, req, {
+      status: 200,
+      message: 'Checkout session created',
+      data: { sessionId, checkoutUrl },
+      legacy: { sessionId, checkoutUrl },
+    });
   } catch (err) {
     next(err);
   }
@@ -34,7 +43,11 @@ async function handleWebhook(req, res, next) {
   const signature = req.headers['stripe-signature'];
 
   if (!signature) {
-    return res.status(400).json({ success: false, message: 'Missing Stripe-Signature header' });
+    return sendError(res, req, {
+      status: 400,
+      code: 'MISSING_STRIPE_SIGNATURE',
+      message: 'Missing Stripe-Signature header',
+    });
   }
 
   // req.body is a raw Buffer set by express.raw() in app.js
@@ -43,7 +56,11 @@ async function handleWebhook(req, res, next) {
     event = verifyWebhookEvent(req.body, signature, env.stripeWebhookSecret);
   } catch (err) {
     logger.error('[payment] Webhook signature verification failed', { error: err.message });
-    return res.status(400).json({ success: false, message: `Webhook signature error: ${err.message}` });
+    return sendError(res, req, {
+      status: 400,
+      code: 'INVALID_STRIPE_SIGNATURE',
+      message: `Webhook signature error: ${err.message}`,
+    });
   }
 
   // Handle supported event types
@@ -56,7 +73,12 @@ async function handleWebhook(req, res, next) {
         sessionId: session.id,
       });
       // Acknowledge to Stripe to avoid retries (caller error, not ours)
-      return res.status(200).json({ success: true, received: true });
+      return sendSuccess(res, req, {
+        status: 200,
+        message: 'Webhook received',
+        data: { received: true },
+        legacy: { received: true },
+      });
     }
 
     try {
@@ -70,12 +92,22 @@ async function handleWebhook(req, res, next) {
       });
     }
 
-    return res.status(200).json({ success: true, received: true });
+    return sendSuccess(res, req, {
+      status: 200,
+      message: 'Webhook processed',
+      data: { received: true },
+      legacy: { received: true },
+    });
   }
 
   // All other event types: acknowledge and ignore
   logger.info('[payment] Ignored webhook event', { type: event.type });
-  return res.status(200).json({ success: true, received: true });
+  return sendSuccess(res, req, {
+    status: 200,
+    message: 'Webhook ignored',
+    data: { received: true },
+    legacy: { received: true },
+  });
 }
 
 module.exports = { checkoutSession, handleWebhook };
