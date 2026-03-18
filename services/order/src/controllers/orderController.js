@@ -3,21 +3,26 @@
 const Order                                   = require('../models/Order');
 const { createOrderSchema,
         updateStatusSchema,
+  restaurantUpdateStatusSchema,
         deliveryStatusSchema }                = require('../middleware/validate');
 const { validateCartItems,
         createCheckoutSession,
         createDeliveryJob }                   = require('../services/httpClients');
 const logger                                  = require('../../../../shared/utils/logger');
+const { sendSuccess, sendError } = require('../../../../shared/utils/apiResponse');
 
 // ── POST /orders ──────────────────────────────────────────────────────────────
 async function createOrder(req, res, next) {
   try {
     const parsed = createOrderSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({
-        success: false,
+      const errors = parsed.error.errors.map((e) => ({ field: e.path.join('.'), message: e.message }));
+      return sendError(res, req, {
+        status: 400,
+        code: 'VALIDATION_ERROR',
         message: 'Validation failed',
-        errors:  parsed.error.errors.map((e) => ({ field: e.path.join('.'), message: e.message })),
+        details: errors,
+        legacy: { errors },
       });
     }
 
@@ -27,10 +32,12 @@ async function createOrder(req, res, next) {
     // 1) Validate items against Restaurant Service
     const validation = await validateCartItems(restaurantId, items);
     if (!validation.valid) {
-      return res.status(422).json({
-        success: false,
+      return sendError(res, req, {
+        status: 422,
+        code: 'ORDER_ITEMS_UNAVAILABLE',
         message: 'One or more items are unavailable',
-        errors:  validation.errors,
+        details: validation.errors,
+        legacy: { errors: validation.errors },
       });
     }
 
@@ -57,12 +64,21 @@ async function createOrder(req, res, next) {
 
     logger.info('[order] Order created', { orderId: order._id, userId, total: order.total });
 
-    return res.status(201).json({
-      success:     true,
-      orderId:     order._id,
-      status:      order.status,
-      total:       order.total,
-      checkoutUrl: payment.checkoutUrl,
+    return sendSuccess(res, req, {
+      status: 201,
+      message: 'Order created',
+      data: {
+        orderId: order._id,
+        status: order.status,
+        total: order.total,
+        checkoutUrl: payment.checkoutUrl,
+      },
+      legacy: {
+        orderId: order._id,
+        status: order.status,
+        total: order.total,
+        checkoutUrl: payment.checkoutUrl,
+      },
     });
   } catch (err) {
     next(err);
@@ -73,7 +89,27 @@ async function createOrder(req, res, next) {
 async function getMyOrders(req, res, next) {
   try {
     const orders = await Order.find({ userId: req.user.userId }).sort({ createdAt: -1 });
-    return res.status(200).json({ success: true, orders });
+    return sendSuccess(res, req, {
+      status: 200,
+      message: 'Orders fetched',
+      data: { orders },
+      legacy: { orders },
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// ── GET /orders/restaurant/:restaurantId ────────────────────────────────────
+async function getRestaurantOrders(req, res, next) {
+  try {
+    const orders = await Order.find({ restaurantId: req.params.restaurantId }).sort({ createdAt: -1 });
+    return sendSuccess(res, req, {
+      status: 200,
+      message: 'Restaurant orders fetched',
+      data: { orders },
+      legacy: { orders },
+    });
   } catch (err) {
     next(err);
   }
@@ -84,16 +120,29 @@ async function getOrder(req, res, next) {
   try {
     const order = await Order.findById(req.params.id);
     if (!order) {
-      return res.status(404).json({ success: false, message: 'Order not found' });
+      return sendError(res, req, {
+        status: 404,
+        code: 'ORDER_NOT_FOUND',
+        message: 'Order not found',
+      });
     }
 
     const isOwner = order.userId === req.user.userId;
     const isAdmin = req.user.role === 'admin';
     if (!isOwner && !isAdmin) {
-      return res.status(403).json({ success: false, message: 'Forbidden' });
+      return sendError(res, req, {
+        status: 403,
+        code: 'FORBIDDEN',
+        message: 'Forbidden',
+      });
     }
 
-    return res.status(200).json({ success: true, order });
+    return sendSuccess(res, req, {
+      status: 200,
+      message: 'Order fetched',
+      data: { order },
+      legacy: { order },
+    });
   } catch (err) {
     next(err);
   }
@@ -105,10 +154,13 @@ async function updateOrderStatus(req, res, next) {
   try {
     const parsed = updateStatusSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({
-        success: false,
+      const errors = parsed.error.errors.map((e) => ({ field: e.path.join('.'), message: e.message }));
+      return sendError(res, req, {
+        status: 400,
+        code: 'VALIDATION_ERROR',
         message: 'Validation failed',
-        errors:  parsed.error.errors.map((e) => ({ field: e.path.join('.'), message: e.message })),
+        details: errors,
+        legacy: { errors },
       });
     }
 
@@ -118,11 +170,72 @@ async function updateOrderStatus(req, res, next) {
       { new: true, runValidators: true }
     );
     if (!order) {
-      return res.status(404).json({ success: false, message: 'Order not found' });
+      return sendError(res, req, {
+        status: 404,
+        code: 'ORDER_NOT_FOUND',
+        message: 'Order not found',
+      });
     }
 
     logger.info('[order] Status updated', { orderId: order._id, status: order.status });
-    return res.status(200).json({ success: true, order });
+    return sendSuccess(res, req, {
+      status: 200,
+      message: 'Order status updated',
+      data: { order },
+      legacy: { order },
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// ── PATCH /orders/:id/restaurant-status ─────────────────────────────────────
+async function updateRestaurantOrderStatus(req, res, next) {
+  try {
+    const parsed = restaurantUpdateStatusSchema.safeParse(req.body);
+    if (!parsed.success) {
+      const errors = parsed.error.errors.map((e) => ({ field: e.path.join('.'), message: e.message }));
+      return sendError(res, req, {
+        status: 400,
+        code: 'VALIDATION_ERROR',
+        message: 'Validation failed',
+        details: errors,
+        legacy: { errors },
+      });
+    }
+
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return sendError(res, req, {
+        status: 404,
+        code: 'ORDER_NOT_FOUND',
+        message: 'Order not found',
+      });
+    }
+
+    if (req.params.restaurantId && order.restaurantId !== req.params.restaurantId) {
+      return sendError(res, req, {
+        status: 403,
+        code: 'FORBIDDEN_RESTAURANT_MISMATCH',
+        message: 'Order does not belong to this restaurant',
+      });
+    }
+
+    order.status = parsed.data.status;
+    await order.save();
+
+    logger.info('[order] Restaurant updated order status', {
+      orderId: order._id,
+      restaurantId: order.restaurantId,
+      status: order.status,
+    });
+
+    return sendSuccess(res, req, {
+      status: 200,
+      message: 'Order status updated',
+      data: { order },
+      legacy: { order },
+    });
   } catch (err) {
     next(err);
   }
@@ -134,12 +247,21 @@ async function paymentConfirmed(req, res, next) {
   try {
     const order = await Order.findById(req.params.id);
     if (!order) {
-      return res.status(404).json({ success: false, message: 'Order not found' });
+      return sendError(res, req, {
+        status: 404,
+        code: 'ORDER_NOT_FOUND',
+        message: 'Order not found',
+      });
     }
 
     if (order.payment.paymentStatus === 'paid') {
       // Idempotent – already processed
-      return res.status(200).json({ success: true, message: 'Already processed', order });
+      return sendSuccess(res, req, {
+        status: 200,
+        message: 'Already processed',
+        data: { order },
+        legacy: { order },
+      });
     }
 
     order.status                   = 'PAID';
@@ -160,7 +282,12 @@ async function paymentConfirmed(req, res, next) {
       });
     }
 
-    return res.status(200).json({ success: true, order });
+    return sendSuccess(res, req, {
+      status: 200,
+      message: 'Payment confirmed',
+      data: { order },
+      legacy: { order },
+    });
   } catch (err) {
     next(err);
   }
@@ -172,10 +299,13 @@ async function updateDeliveryStatus(req, res, next) {
   try {
     const parsed = deliveryStatusSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({
-        success: false,
+      const errors = parsed.error.errors.map((e) => ({ field: e.path.join('.'), message: e.message }));
+      return sendError(res, req, {
+        status: 400,
+        code: 'VALIDATION_ERROR',
         message: 'Validation failed',
-        errors:  parsed.error.errors.map((e) => ({ field: e.path.join('.'), message: e.message })),
+        details: errors,
+        legacy: { errors },
       });
     }
 
@@ -183,7 +313,11 @@ async function updateDeliveryStatus(req, res, next) {
 
     const order = await Order.findById(req.params.id);
     if (!order) {
-      return res.status(404).json({ success: false, message: 'Order not found' });
+      return sendError(res, req, {
+        status: 404,
+        code: 'ORDER_NOT_FOUND',
+        message: 'Order not found',
+      });
     }
 
     order.status = status;
@@ -194,7 +328,12 @@ async function updateDeliveryStatus(req, res, next) {
     await order.save();
 
     logger.info('[order] Delivery status updated', { orderId: order._id, status });
-    return res.status(200).json({ success: true, order });
+    return sendSuccess(res, req, {
+      status: 200,
+      message: 'Delivery status updated',
+      data: { order },
+      legacy: { order },
+    });
   } catch (err) {
     next(err);
   }
@@ -203,8 +342,10 @@ async function updateDeliveryStatus(req, res, next) {
 module.exports = {
   createOrder,
   getMyOrders,
+  getRestaurantOrders,
   getOrder,
   updateOrderStatus,
+  updateRestaurantOrderStatus,
   paymentConfirmed,
   updateDeliveryStatus,
 };

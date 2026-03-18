@@ -277,6 +277,91 @@ describe('GET /restaurants/:id/menu/items', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// PATCH /restaurants/:id/menu/items/:itemId
+// ─────────────────────────────────────────────────────────────────────────────
+describe('PATCH /restaurants/:id/menu/items/:itemId', () => {
+  it('updates a menu item (200, restaurantAdmin)', async () => {
+    Restaurant.findById.mockResolvedValue(MOCK_RESTAURANT);
+    MenuItem.findOneAndUpdate.mockResolvedValue({ ...MOCK_ITEM_1, price: 13.5 });
+
+    const res = await request(app)
+      .patch(`/restaurants/${RESTAURANT_ID}/menu/items/${ITEM_ID_1}`)
+      .set('Authorization', `Bearer ${makeToken('restaurantAdmin')}`)
+      .send({ price: 13.5 });
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.item.price).toBe(13.5);
+    expect(MenuItem.findOneAndUpdate).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns 400 when body is empty', async () => {
+    Restaurant.findById.mockResolvedValue(MOCK_RESTAURANT);
+
+    const res = await request(app)
+      .patch(`/restaurants/${RESTAURANT_ID}/menu/items/${ITEM_ID_1}`)
+      .set('Authorization', `Bearer ${makeToken('restaurantAdmin')}`)
+      .send({});
+
+    expect(res.status).toBe(400);
+    expect(MenuItem.findOneAndUpdate).not.toHaveBeenCalled();
+  });
+
+  it('returns 404 when restaurant not found', async () => {
+    Restaurant.findById.mockResolvedValue(null);
+
+    const res = await request(app)
+      .patch(`/restaurants/${RESTAURANT_ID}/menu/items/${ITEM_ID_1}`)
+      .set('Authorization', `Bearer ${makeToken('restaurantAdmin')}`)
+      .send({ price: 13.5 });
+
+    expect(res.status).toBe(404);
+  });
+
+  it('returns 404 when menu item not found', async () => {
+    Restaurant.findById.mockResolvedValue(MOCK_RESTAURANT);
+    MenuItem.findOneAndUpdate.mockResolvedValue(null);
+
+    const res = await request(app)
+      .patch(`/restaurants/${RESTAURANT_ID}/menu/items/${ITEM_ID_1}`)
+      .set('Authorization', `Bearer ${makeToken('restaurantAdmin')}`)
+      .send({ price: 13.5 });
+
+    expect(res.status).toBe(404);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DELETE /restaurants/:id/menu/items/:itemId
+// ─────────────────────────────────────────────────────────────────────────────
+describe('DELETE /restaurants/:id/menu/items/:itemId', () => {
+  it('deletes a menu item (200, restaurantAdmin)', async () => {
+    Restaurant.findById.mockResolvedValue(MOCK_RESTAURANT);
+    MenuItem.findOneAndDelete.mockResolvedValue(MOCK_ITEM_1);
+
+    const res = await request(app)
+      .delete(`/restaurants/${RESTAURANT_ID}/menu/items/${ITEM_ID_1}`)
+      .set('Authorization', `Bearer ${makeToken('restaurantAdmin')}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.itemId).toBe(ITEM_ID_1);
+    expect(MenuItem.findOneAndDelete).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns 404 when menu item not found', async () => {
+    Restaurant.findById.mockResolvedValue(MOCK_RESTAURANT);
+    MenuItem.findOneAndDelete.mockResolvedValue(null);
+
+    const res = await request(app)
+      .delete(`/restaurants/${RESTAURANT_ID}/menu/items/${ITEM_ID_1}`)
+      .set('Authorization', `Bearer ${makeToken('restaurantAdmin')}`);
+
+    expect(res.status).toBe(404);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // POST /restaurants/:id/menu/validate
 // ─────────────────────────────────────────────────────────────────────────────
 describe('POST /restaurants/:id/menu/validate', () => {

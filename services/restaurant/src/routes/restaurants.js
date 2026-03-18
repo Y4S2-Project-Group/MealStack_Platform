@@ -11,6 +11,8 @@ const {
 } = require('../controllers/restaurantController');
 const {
   createMenuItem,
+  updateMenuItem,
+  deleteMenuItem,
   listMenuItems,
   validateMenuItems,
 } = require('../controllers/menuController');
@@ -35,6 +37,20 @@ router.post(
   requireAuth,
   requireRole('restaurantAdmin'),
   createMenuItem
+);
+
+router.patch(
+  '/restaurants/:id/menu/items/:itemId',
+  requireAuth,
+  requireRole('restaurantAdmin'),
+  updateMenuItem
+);
+
+router.delete(
+  '/restaurants/:id/menu/items/:itemId',
+  requireAuth,
+  requireRole('restaurantAdmin'),
+  deleteMenuItem
 );
 
 router.get('/restaurants/:id/menu/items', listMenuItems);

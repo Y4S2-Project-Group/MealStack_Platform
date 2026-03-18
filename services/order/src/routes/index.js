@@ -4,6 +4,7 @@ const { Router } = require('express');
 
 const requireAuth    = require('../../../../shared/middleware/requireAuth');
 const requireRole    = require('../../../../shared/middleware/requireRole');
+const { sendSuccess, sendError } = require('../../../../shared/utils/apiResponse');
 const env            = require('../config/env');
 const orderCtrl      = require('../controllers/orderController');
 
@@ -13,21 +14,32 @@ const router = Router();
 function requireInternalKey(req, res, next) {
   const key = req.headers['x-internal-key'];
   if (!key || key !== env.internalApiKey) {
-    return res.status(401).json({ success: false, message: 'Missing or invalid internal API key' });
+    return sendError(res, req, {
+      status: 401,
+      code: 'UNAUTHORIZED_INTERNAL_KEY',
+      message: 'Missing or invalid internal API key',
+    });
   }
   next();
 }
 
 // ── Health ───────────────────────────────────────────────────────────────────
 router.get('/health', (_req, res) => {
-  res.status(200).json({ status: 'ok', service: 'order' });
+  return sendSuccess(res, _req, {
+    status: 200,
+    message: 'Order service healthy',
+    data: { status: 'ok', service: 'order' },
+    legacy: { status: 'ok', service: 'order' },
+  });
 });
 
 // ── Customer-facing routes ────────────────────────────────────────────────────
 // NOTE: /orders/my MUST be declared BEFORE /orders/:id
 router.post('/orders',     requireAuth, requireRole('customer'), orderCtrl.createOrder);
 router.get('/orders/my',   requireAuth, orderCtrl.getMyOrders);
+router.get('/orders/restaurant/:restaurantId', requireAuth, requireRole('restaurantAdmin'), orderCtrl.getRestaurantOrders);
 router.get('/orders/:id',  requireAuth, orderCtrl.getOrder);
+router.patch('/orders/:id/restaurant-status', requireAuth, requireRole('restaurantAdmin'), orderCtrl.updateRestaurantOrderStatus);
 
 // ── Internal / admin route ────────────────────────────────────────────────────
 router.patch('/orders/:id/status', requireInternalKey, orderCtrl.updateOrderStatus);

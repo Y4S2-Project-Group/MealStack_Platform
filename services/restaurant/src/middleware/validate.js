@@ -17,6 +17,19 @@ const createMenuItemSchema = z.object({
   isAvailable: z.boolean().optional().default(true),
 });
 
+// ── Update Menu Item ──────────────────────────────────────────────────────────
+const updateMenuItemSchema = z
+  .object({
+    name:        z.string().trim().min(1, 'Name is required').max(120).optional(),
+    description: z.string().trim().max(500).optional(),
+    price:       z.number({ invalid_type_error: 'Price must be a number' }).min(0, 'Price cannot be negative').optional(),
+    isAvailable: z.boolean().optional(),
+  })
+  .refine((obj) => Object.keys(obj).length > 0, {
+    message: 'At least one field must be provided',
+    path: ['body'],
+  });
+
 // ── Validate cart items (used by Order Service) ───────────────────────────────
 const validateItemsSchema = z.object({
   items: z
@@ -31,4 +44,4 @@ const validateItemsSchema = z.object({
     .min(1, 'At least one item is required'),
 });
 
-module.exports = { createRestaurantSchema, createMenuItemSchema, validateItemsSchema };
+module.exports = { createRestaurantSchema, createMenuItemSchema, updateMenuItemSchema, validateItemsSchema };

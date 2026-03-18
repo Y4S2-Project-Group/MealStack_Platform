@@ -6,34 +6,34 @@ const orderItemSchema = {
   type: 'object',
   properties: {
     menuItemId: { type: 'string' },
-    name:       { type: 'string' },
-    unitPrice:  { type: 'number' },
-    quantity:   { type: 'integer' },
-    lineTotal:  { type: 'number' },
+    name: { type: 'string' },
+    unitPrice: { type: 'number' },
+    quantity: { type: 'integer' },
+    lineTotal: { type: 'number' },
   },
 };
 
 const orderSchema = {
   type: 'object',
   properties: {
-    _id:          { type: 'string' },
-    userId:       { type: 'string' },
+    _id: { type: 'string' },
+    userId: { type: 'string' },
     restaurantId: { type: 'string' },
-    items:        { type: 'array', items: orderItemSchema },
-    total:        { type: 'number', example: 42.50 },
-    status:       { $ref: '#/components/schemas/OrderStatus' },
+    items: { type: 'array', items: orderItemSchema },
+    total: { type: 'number', example: 42.5 },
+    status: { type: 'string', enum: ['CREATED', 'PENDING_PAYMENT', 'PAID', 'ASSIGNED_TO_RIDER', 'PICKED_UP', 'DELIVERED'] },
     payment: {
       type: 'object',
       properties: {
-        provider:          { type: 'string', example: 'stripe' },
+        provider: { type: 'string', example: 'stripe' },
         checkoutSessionId: { type: 'string' },
-        paymentStatus:     { type: 'string', enum: ['pending', 'paid', 'failed'] },
+        paymentStatus: { type: 'string', enum: ['pending', 'paid', 'failed'] },
       },
     },
     rider: {
       type: 'object',
       properties: {
-        riderId:    { type: 'string' },
+        riderId: { type: 'string' },
         assignedAt: { type: 'string', format: 'date-time' },
       },
     },
@@ -42,33 +42,56 @@ const orderSchema = {
 };
 
 const idParam = { name: 'id', in: 'path', required: true, schema: { type: 'string' } };
-const bearerSec = [{ bearerAuth: [] }];
-const internalKeySec = [{ internalKey: [] }];
 
 const spec = {
   openapi: '3.0.3',
   info: {
     title: 'MealStack Order Service',
-    version: '1.0.0',
-    description: 'Order lifecycle — PENDING_PAYMENT → PAID → ASSIGNED_TO_RIDER → PICKED_UP → DELIVERED.',
+    version: '1.1.0',
+    description: 'Order lifecycle orchestrator service.',
   },
   servers: [{ url: 'http://localhost:4003', description: 'Local dev' }],
   components: {
     securitySchemes: {
-      bearerAuth:  { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
+      bearerAuth: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
       internalKey: { type: 'apiKey', in: 'header', name: 'x-internal-key' },
     },
     schemas: {
-      OrderStatus: {
-        type: 'string',
-        enum: ['CREATED', 'PENDING_PAYMENT', 'PAID', 'ASSIGNED_TO_RIDER', 'PICKED_UP', 'DELIVERED'],
+      Meta: {
+        type: 'object',
+        properties: {
+          timestamp: { type: 'string', format: 'date-time' },
+          traceId: { type: 'string' },
+        },
       },
-      Order:  orderSchema,
-      Error: {
+      Order: orderSchema,
+      ValidationIssue: {
+        type: 'object',
+        properties: {
+          field: { type: 'string' },
+          message: { type: 'string' },
+        },
+      },
+      ApiError: {
         type: 'object',
         properties: {
           success: { type: 'boolean', example: false },
           message: { type: 'string' },
+          error: {
+            type: 'object',
+            properties: {
+              code: { type: 'string' },
+              details: {
+                oneOf: [
+                  { type: 'null' },
+                  { type: 'object' },
+                  { type: 'array', items: { $ref: '#/components/schemas/ValidationIssue' } },
+                ],
+              },
+            },
+          },
+          meta: { $ref: '#/components/schemas/Meta' },
+          errors: { type: 'array', items: { $ref: '#/components/schemas/ValidationIssue' } },
         },
       },
     },
@@ -81,7 +104,27 @@ const spec = {
         responses: {
           200: {
             description: 'Service is healthy',
-            content: { 'application/json': { schema: { type: 'object', properties: { status: { type: 'string' }, service: { type: 'string' } } } } },
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean', example: true },
+                    message: { type: 'string', example: 'Order service healthy' },
+                    data: {
+                      type: 'object',
+                      properties: {
+                        status: { type: 'string', example: 'ok' },
+                        service: { type: 'string', example: 'order' },
+                      },
+                    },
+                    meta: { $ref: '#/components/schemas/Meta' },
+                    status: { type: 'string' },
+                    service: { type: 'string' },
+                  },
+                },
+              },
+            },
           },
         },
       },
@@ -90,8 +133,8 @@ const spec = {
       post: {
         tags: ['Orders'],
         summary: 'Create an order (customer)',
-        description: 'Validates cart via Restaurant Service, creates order, initiates Stripe checkout.',
-        security: bearerSec,
+        description: 'Downstream triggers: calls Restaurant Service for cart validation and Payment Service for checkout session creation.',
+        security: [{ bearerAuth: [] }],
         requestBody: {
           required: true,
           content: {
@@ -108,7 +151,7 @@ const spec = {
                       required: ['menuItemId', 'quantity'],
                       properties: {
                         menuItemId: { type: 'string' },
-                        quantity:   { type: 'integer', minimum: 1 },
+                        quantity: { type: 'integer', minimum: 1 },
                       },
                     },
                   },
@@ -125,79 +168,199 @@ const spec = {
                 schema: {
                   type: 'object',
                   properties: {
-                    success:     { type: 'boolean' },
-                    orderId:     { type: 'string' },
-                    status:      { $ref: '#/components/schemas/OrderStatus' },
-                    total:       { type: 'number' },
+                    success: { type: 'boolean' },
+                    message: { type: 'string' },
+                    data: {
+                      type: 'object',
+                      properties: {
+                        orderId: { type: 'string' },
+                        status: { type: 'string' },
+                        total: { type: 'number' },
+                        checkoutUrl: { type: 'string' },
+                      },
+                    },
+                    meta: { $ref: '#/components/schemas/Meta' },
+                    orderId: { type: 'string' },
+                    status: { type: 'string' },
+                    total: { type: 'number' },
                     checkoutUrl: { type: 'string' },
                   },
                 },
               },
             },
           },
-          400: { description: 'Validation error',  content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
-          401: { description: 'Unauthorised',       content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
-          422: { description: 'Items unavailable',  content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+          400: { description: 'Validation failed', content: { 'application/json': { schema: { $ref: '#/components/schemas/ApiError' } } } },
+          401: { description: 'Missing/invalid JWT', content: { 'application/json': { schema: { $ref: '#/components/schemas/ApiError' } } } },
+          422: { description: 'Unavailable/invalid items', content: { 'application/json': { schema: { $ref: '#/components/schemas/ApiError' } } } },
+          502: { description: 'Downstream integration failure', content: { 'application/json': { schema: { $ref: '#/components/schemas/ApiError' } } } },
         },
       },
     },
     '/orders/my': {
       get: {
         tags: ['Orders'],
-        summary: "List current user's orders",
-        security: bearerSec,
+        summary: 'List authenticated user orders',
+        security: [{ bearerAuth: [] }],
         responses: {
-          200: { description: 'Array of orders', content: { 'application/json': { schema: { type: 'object', properties: { success: { type: 'boolean' }, orders: { type: 'array', items: { $ref: '#/components/schemas/Order' } } } } } } },
-          401: { description: 'Unauthorised' },
+          200: {
+            description: 'Orders fetched',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean' },
+                    message: { type: 'string' },
+                    data: { type: 'object', properties: { orders: { type: 'array', items: { $ref: '#/components/schemas/Order' } } } },
+                    meta: { $ref: '#/components/schemas/Meta' },
+                    orders: { type: 'array', items: { $ref: '#/components/schemas/Order' } },
+                  },
+                },
+              },
+            },
+          },
+          401: { description: 'Missing/invalid JWT', content: { 'application/json': { schema: { $ref: '#/components/schemas/ApiError' } } } },
+        },
+      },
+    },
+    '/orders/restaurant/{restaurantId}': {
+      get: {
+        tags: ['Orders'],
+        summary: 'List orders for a restaurant (restaurantAdmin)',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'restaurantId', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: {
+          200: {
+            description: 'Restaurant orders fetched',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean' },
+                    message: { type: 'string' },
+                    data: { type: 'object', properties: { orders: { type: 'array', items: { $ref: '#/components/schemas/Order' } } } },
+                    meta: { $ref: '#/components/schemas/Meta' },
+                    orders: { type: 'array', items: { $ref: '#/components/schemas/Order' } },
+                  },
+                },
+              },
+            },
+          },
+          401: { description: 'Missing/invalid JWT', content: { 'application/json': { schema: { $ref: '#/components/schemas/ApiError' } } } },
+          403: { description: 'Forbidden (role mismatch)', content: { 'application/json': { schema: { $ref: '#/components/schemas/ApiError' } } } },
         },
       },
     },
     '/orders/{id}': {
       get: {
         tags: ['Orders'],
-        summary: 'Get an order by ID (owner or admin)',
-        security: bearerSec,
+        summary: 'Get one order (owner/admin)',
+        security: [{ bearerAuth: [] }],
         parameters: [idParam],
         responses: {
-          200: { description: 'Order', content: { 'application/json': { schema: { type: 'object', properties: { success: { type: 'boolean' }, order: { $ref: '#/components/schemas/Order' } } } } } },
-          401: { description: 'Unauthorised' },
-          403: { description: 'Forbidden' },
-          404: { description: 'Not found' },
+          200: {
+            description: 'Order fetched',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean' },
+                    message: { type: 'string' },
+                    data: { type: 'object', properties: { order: { $ref: '#/components/schemas/Order' } } },
+                    meta: { $ref: '#/components/schemas/Meta' },
+                    order: { $ref: '#/components/schemas/Order' },
+                  },
+                },
+              },
+            },
+          },
+          401: { description: 'Missing/invalid JWT', content: { 'application/json': { schema: { $ref: '#/components/schemas/ApiError' } } } },
+          403: { description: 'Forbidden', content: { 'application/json': { schema: { $ref: '#/components/schemas/ApiError' } } } },
+          404: { description: 'Order not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/ApiError' } } } },
         },
       },
     },
     '/orders/{id}/status': {
       patch: {
         tags: ['Internal'],
-        summary: 'Update order status (internal API key)',
-        security: internalKeySec,
+        summary: 'Update order status (internal key)',
+        security: [{ internalKey: [] }],
         parameters: [idParam],
         requestBody: {
           required: true,
-          content: { 'application/json': { schema: { type: 'object', required: ['status'], properties: { status: { $ref: '#/components/schemas/OrderStatus' } } } } },
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['status'],
+                properties: {
+                  status: { type: 'string', enum: ['CREATED', 'PENDING_PAYMENT', 'PAID', 'ASSIGNED_TO_RIDER', 'PICKED_UP', 'DELIVERED'] },
+                },
+              },
+            },
+          },
         },
         responses: {
-          200: { description: 'Status updated' },
-          400: { description: 'Validation error' },
-          401: { description: 'Missing/invalid key' },
-          404: { description: 'Order not found' },
+          200: { description: 'Order status updated', content: { 'application/json': { schema: { type: 'object' } } } },
+          400: { description: 'Validation failed', content: { 'application/json': { schema: { $ref: '#/components/schemas/ApiError' } } } },
+          401: { description: 'Missing/invalid internal key', content: { 'application/json': { schema: { $ref: '#/components/schemas/ApiError' } } } },
+          404: { description: 'Order not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/ApiError' } } } },
+        },
+      },
+    },
+    '/orders/{id}/restaurant-status': {
+      patch: {
+        tags: ['Orders'],
+        summary: 'Update order status as restaurant admin',
+        security: [{ bearerAuth: [] }],
+        parameters: [idParam],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['status'],
+                properties: {
+                  status: { type: 'string', enum: ['ASSIGNED_TO_RIDER', 'PICKED_UP', 'DELIVERED'] },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: 'Order status updated', content: { 'application/json': { schema: { type: 'object' } } } },
+          400: { description: 'Validation failed', content: { 'application/json': { schema: { $ref: '#/components/schemas/ApiError' } } } },
+          401: { description: 'Missing/invalid JWT', content: { 'application/json': { schema: { $ref: '#/components/schemas/ApiError' } } } },
+          403: { description: 'Forbidden (role mismatch)', content: { 'application/json': { schema: { $ref: '#/components/schemas/ApiError' } } } },
+          404: { description: 'Order not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/ApiError' } } } },
         },
       },
     },
     '/orders/{id}/payment/confirmed': {
       post: {
         tags: ['Internal'],
-        summary: 'Mark order as PAID and dispatch rider (called by Payment Service)',
-        security: internalKeySec,
+        summary: 'Mark payment confirmed (called by Payment Service)',
+        description: 'Downstream trigger: creates delivery job in Rider Service after payment confirmation.',
+        security: [{ internalKey: [] }],
         parameters: [idParam],
         requestBody: {
           required: false,
-          content: { 'application/json': { schema: { type: 'object', properties: { checkoutSessionId: { type: 'string' } } } } },
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: { checkoutSessionId: { type: 'string' } },
+              },
+            },
+          },
         },
         responses: {
-          200: { description: 'Order marked as paid' },
-          401: { description: 'Missing/invalid key' },
-          404: { description: 'Order not found' },
+          200: { description: 'Payment confirmation processed', content: { 'application/json': { schema: { type: 'object' } } } },
+          401: { description: 'Missing/invalid internal key', content: { 'application/json': { schema: { $ref: '#/components/schemas/ApiError' } } } },
+          404: { description: 'Order not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/ApiError' } } } },
         },
       },
     },
@@ -205,17 +368,28 @@ const spec = {
       post: {
         tags: ['Internal'],
         summary: 'Update delivery status (called by Rider Service)',
-        security: internalKeySec,
+        security: [{ internalKey: [] }],
         parameters: [idParam],
         requestBody: {
           required: true,
-          content: { 'application/json': { schema: { type: 'object', required: ['status'], properties: { status: { type: 'string', enum: ['PICKED_UP', 'DELIVERED'] }, riderId: { type: 'string' } } } } },
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['status'],
+                properties: {
+                  status: { type: 'string', enum: ['PICKED_UP', 'DELIVERED'] },
+                  riderId: { type: 'string' },
+                },
+              },
+            },
+          },
         },
         responses: {
-          200: { description: 'Delivery status updated' },
-          400: { description: 'Validation error' },
-          401: { description: 'Missing/invalid key' },
-          404: { description: 'Order not found' },
+          200: { description: 'Delivery status updated', content: { 'application/json': { schema: { type: 'object' } } } },
+          400: { description: 'Validation failed', content: { 'application/json': { schema: { $ref: '#/components/schemas/ApiError' } } } },
+          401: { description: 'Missing/invalid internal key', content: { 'application/json': { schema: { $ref: '#/components/schemas/ApiError' } } } },
+          404: { description: 'Order not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/ApiError' } } } },
         },
       },
     },

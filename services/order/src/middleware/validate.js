@@ -25,6 +25,13 @@ const updateStatusSchema = z.object({
   ),
 });
 
+// ── PATCH /orders/:id/restaurant-status ─────────────────────────────────────
+const restaurantUpdateStatusSchema = z.object({
+  status: z.enum(['ASSIGNED_TO_RIDER', 'PICKED_UP', 'DELIVERED'], {
+    errorMap: () => ({ message: 'status must be ASSIGNED_TO_RIDER, PICKED_UP, or DELIVERED' }),
+  }),
+});
+
 // ── POST /orders/:id/delivery/status ─────────────────────────────────────────
 const deliveryStatusSchema = z.object({
   status: z.enum(['PICKED_UP', 'DELIVERED'], {
@@ -33,4 +40,9 @@ const deliveryStatusSchema = z.object({
   riderId: z.string().min(1).optional(),
 });
 
-module.exports = { createOrderSchema, updateStatusSchema, deliveryStatusSchema };
+module.exports = {
+  createOrderSchema,
+  updateStatusSchema,
+  restaurantUpdateStatusSchema,
+  deliveryStatusSchema,
+};

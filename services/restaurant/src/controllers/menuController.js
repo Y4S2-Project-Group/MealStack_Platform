@@ -3,8 +3,26 @@
 const mongoose                                   = require('mongoose');
 const MenuItem                                   = require('../models/MenuItem');
 const Restaurant                                 = require('../models/Restaurant');
-const { createMenuItemSchema, validateItemsSchema } = require('../middleware/validate');
+const { createMenuItemSchema, updateMenuItemSchema, validateItemsSchema } = require('../middleware/validate');
 const logger                                     = require('../../../../shared/utils/logger');
+const { sendSuccess, sendError } = require('../../../../shared/utils/apiResponse');
+
+function assertRestaurantAdminOwnership(req, restaurant) {
+  if (req.user?.role !== 'restaurantAdmin') {
+    return { allowed: false, status: 403, code: 'FORBIDDEN', message: 'Forbidden' };
+  }
+
+  if (restaurant.ownerUserId && restaurant.ownerUserId !== req.user.userId) {
+    return {
+      allowed: false,
+      status: 403,
+      code: 'FORBIDDEN_OWNER_MISMATCH',
+      message: 'You are not allowed to modify this restaurant',
+    };
+  }
+
+  return { allowed: true };
+}
 
 // ── POST /restaurants/:id/menu/items ──────────────────────────────────────────
 async function createMenuItem(req, res, next) {
@@ -12,15 +30,31 @@ async function createMenuItem(req, res, next) {
     // Ensure the restaurant exists
     const restaurant = await Restaurant.findById(req.params.id);
     if (!restaurant) {
-      return res.status(404).json({ success: false, message: 'Restaurant not found' });
+      return sendError(res, req, {
+        status: 404,
+        code: 'RESTAURANT_NOT_FOUND',
+        message: 'Restaurant not found',
+      });
+    }
+
+    const ownership = assertRestaurantAdminOwnership(req, restaurant);
+    if (!ownership.allowed) {
+      return sendError(res, req, {
+        status: ownership.status,
+        code: ownership.code,
+        message: ownership.message,
+      });
     }
 
     const parsed = createMenuItemSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({
-        success: false,
+      const errors = parsed.error.errors.map((e) => ({ field: e.path.join('.'), message: e.message }));
+      return sendError(res, req, {
+        status: 400,
+        code: 'VALIDATION_ERROR',
         message: 'Validation failed',
-        errors:  parsed.error.errors.map((e) => ({ field: e.path.join('.'), message: e.message })),
+        details: errors,
+        legacy: { errors },
       });
     }
 
@@ -35,7 +69,113 @@ async function createMenuItem(req, res, next) {
 
     logger.info('[restaurant] Created menu item', { itemId: item._id, restaurantId: restaurant._id });
 
-    return res.status(201).json({ success: true, item });
+    return sendSuccess(res, req, {
+      status: 201,
+      message: 'Menu item created',
+      data: { item },
+      legacy: { item },
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// ── PATCH /restaurants/:id/menu/items/:itemId ───────────────────────────────
+async function updateMenuItem(req, res, next) {
+  try {
+    const restaurant = await Restaurant.findById(req.params.id);
+    if (!restaurant) {
+      return sendError(res, req, {
+        status: 404,
+        code: 'RESTAURANT_NOT_FOUND',
+        message: 'Restaurant not found',
+      });
+    }
+
+    const ownership = assertRestaurantAdminOwnership(req, restaurant);
+    if (!ownership.allowed) {
+      return sendError(res, req, {
+        status: ownership.status,
+        code: ownership.code,
+        message: ownership.message,
+      });
+    }
+
+    const parsed = updateMenuItemSchema.safeParse(req.body);
+    if (!parsed.success) {
+      const errors = parsed.error.errors.map((e) => ({ field: e.path.join('.'), message: e.message }));
+      return sendError(res, req, {
+        status: 400,
+        code: 'VALIDATION_ERROR',
+        message: 'Validation failed',
+        details: errors,
+        legacy: { errors },
+      });
+    }
+
+    const item = await MenuItem.findOneAndUpdate(
+      { _id: req.params.itemId, restaurantId: restaurant._id },
+      parsed.data,
+      { new: true, runValidators: true }
+    );
+
+    if (!item) {
+      return sendError(res, req, {
+        status: 404,
+        code: 'MENU_ITEM_NOT_FOUND',
+        message: 'Menu item not found',
+      });
+    }
+
+    logger.info('[restaurant] Updated menu item', { itemId: item._id, restaurantId: restaurant._id });
+    return sendSuccess(res, req, {
+      status: 200,
+      message: 'Menu item updated',
+      data: { item },
+      legacy: { item },
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// ── DELETE /restaurants/:id/menu/items/:itemId ──────────────────────────────
+async function deleteMenuItem(req, res, next) {
+  try {
+    const restaurant = await Restaurant.findById(req.params.id);
+    if (!restaurant) {
+      return sendError(res, req, {
+        status: 404,
+        code: 'RESTAURANT_NOT_FOUND',
+        message: 'Restaurant not found',
+      });
+    }
+
+    const ownership = assertRestaurantAdminOwnership(req, restaurant);
+    if (!ownership.allowed) {
+      return sendError(res, req, {
+        status: ownership.status,
+        code: ownership.code,
+        message: ownership.message,
+      });
+    }
+
+    const item = await MenuItem.findOneAndDelete({ _id: req.params.itemId, restaurantId: restaurant._id });
+    if (!item) {
+      return sendError(res, req, {
+        status: 404,
+        code: 'MENU_ITEM_NOT_FOUND',
+        message: 'Menu item not found',
+      });
+    }
+
+    logger.info('[restaurant] Deleted menu item', { itemId: req.params.itemId, restaurantId: restaurant._id });
+    return sendSuccess(res, req, {
+      status: 200,
+      message: 'Menu item deleted',
+      data: { itemId: req.params.itemId },
+      legacy: { itemId: req.params.itemId },
+    });
   } catch (err) {
     next(err);
   }
@@ -46,11 +186,20 @@ async function listMenuItems(req, res, next) {
   try {
     const restaurant = await Restaurant.findById(req.params.id);
     if (!restaurant) {
-      return res.status(404).json({ success: false, message: 'Restaurant not found' });
+      return sendError(res, req, {
+        status: 404,
+        code: 'RESTAURANT_NOT_FOUND',
+        message: 'Restaurant not found',
+      });
     }
 
     const items = await MenuItem.find({ restaurantId: restaurant._id }).sort({ createdAt: 1 });
-    return res.status(200).json({ success: true, items });
+    return sendSuccess(res, req, {
+      status: 200,
+      message: 'Menu items fetched',
+      data: { items },
+      legacy: { items },
+    });
   } catch (err) {
     next(err);
   }
@@ -71,15 +220,22 @@ async function validateMenuItems(req, res, next) {
   try {
     const restaurant = await Restaurant.findById(req.params.id);
     if (!restaurant) {
-      return res.status(404).json({ success: false, message: 'Restaurant not found' });
+      return sendError(res, req, {
+        status: 404,
+        code: 'RESTAURANT_NOT_FOUND',
+        message: 'Restaurant not found',
+      });
     }
 
     const parsed = validateItemsSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({
-        success: false,
+      const errors = parsed.error.errors.map((e) => ({ field: e.path.join('.'), message: e.message }));
+      return sendError(res, req, {
+        status: 400,
+        code: 'VALIDATION_ERROR',
         message: 'Validation failed',
-        errors:  parsed.error.errors.map((e) => ({ field: e.path.join('.'), message: e.message })),
+        details: errors,
+        legacy: { errors },
       });
     }
 
@@ -89,10 +245,13 @@ async function validateMenuItems(req, res, next) {
     const ids = requestedItems.map((i) => i.menuItemId);
     const invalidIds = ids.filter((id) => !mongoose.Types.ObjectId.isValid(id));
     if (invalidIds.length > 0) {
-      return res.status(400).json({
-        success: false,
-        valid:   false,
-        message: `Invalid menuItemId format: ${invalidIds.join(', ')}`,
+      const message = `Invalid menuItemId format: ${invalidIds.join(', ')}`;
+      return sendError(res, req, {
+        status: 400,
+        code: 'INVALID_MENU_ITEM_ID',
+        message,
+        details: { valid: false },
+        legacy: { valid: false },
       });
     }
 
@@ -131,10 +290,15 @@ async function validateMenuItems(req, res, next) {
     }
 
     if (errors.length > 0) {
-      return res.status(422).json({
-        success: false,
-        valid:   false,
-        errors,
+      return sendError(res, req, {
+        status: 422,
+        code: 'MENU_VALIDATION_FAILED',
+        message: 'One or more menu items are invalid or unavailable',
+        details: errors,
+        legacy: {
+          valid: false,
+          errors,
+        },
       });
     }
 
@@ -148,15 +312,23 @@ async function validateMenuItems(req, res, next) {
       total,
     });
 
-    return res.status(200).json({
-      success: true,
-      valid:   true,
-      items:   resultItems,
-      total,
+    return sendSuccess(res, req, {
+      status: 200,
+      message: 'Menu items validated',
+      data: {
+        valid: true,
+        items: resultItems,
+        total,
+      },
+      legacy: {
+        valid: true,
+        items: resultItems,
+        total,
+      },
     });
   } catch (err) {
     next(err);
   }
 }
 
-module.exports = { createMenuItem, listMenuItems, validateMenuItems };
+module.exports = { createMenuItem, updateMenuItem, deleteMenuItem, listMenuItems, validateMenuItems };

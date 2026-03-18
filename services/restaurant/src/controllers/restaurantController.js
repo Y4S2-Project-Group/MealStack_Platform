@@ -3,16 +3,20 @@
 const Restaurant              = require('../models/Restaurant');
 const { createRestaurantSchema } = require('../middleware/validate');
 const logger                  = require('../../../../shared/utils/logger');
+const { sendSuccess, sendError } = require('../../../../shared/utils/apiResponse');
 
 // ── POST /restaurants ─────────────────────────────────────────────────────────
 async function createRestaurant(req, res, next) {
   try {
     const parsed = createRestaurantSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({
-        success: false,
+      const errors = parsed.error.errors.map((e) => ({ field: e.path.join('.'), message: e.message }));
+      return sendError(res, req, {
+        status: 400,
+        code: 'VALIDATION_ERROR',
         message: 'Validation failed',
-        errors:  parsed.error.errors.map((e) => ({ field: e.path.join('.'), message: e.message })),
+        details: errors,
+        legacy: { errors },
       });
     }
 
@@ -23,17 +27,27 @@ async function createRestaurant(req, res, next) {
 
     logger.info('[restaurant] Created restaurant', { restaurantId: restaurant._id, ownerUserId });
 
-    return res.status(201).json({ success: true, restaurant });
+    return sendSuccess(res, req, {
+      status: 201,
+      message: 'Restaurant created',
+      data: { restaurant },
+      legacy: { restaurant },
+    });
   } catch (err) {
     next(err);
   }
 }
 
 // ── GET /restaurants ──────────────────────────────────────────────────────────
-async function listRestaurants(_req, res, next) {
+async function listRestaurants(req, res, next) {
   try {
     const restaurants = await Restaurant.find().sort({ createdAt: -1 });
-    return res.status(200).json({ success: true, restaurants });
+    return sendSuccess(res, req, {
+      status: 200,
+      message: 'Restaurants fetched',
+      data: { restaurants },
+      legacy: { restaurants },
+    });
   } catch (err) {
     next(err);
   }
@@ -44,9 +58,18 @@ async function getRestaurant(req, res, next) {
   try {
     const restaurant = await Restaurant.findById(req.params.id);
     if (!restaurant) {
-      return res.status(404).json({ success: false, message: 'Restaurant not found' });
+      return sendError(res, req, {
+        status: 404,
+        code: 'RESTAURANT_NOT_FOUND',
+        message: 'Restaurant not found',
+      });
     }
-    return res.status(200).json({ success: true, restaurant });
+    return sendSuccess(res, req, {
+      status: 200,
+      message: 'Restaurant fetched',
+      data: { restaurant },
+      legacy: { restaurant },
+    });
   } catch (err) {
     next(err);
   }

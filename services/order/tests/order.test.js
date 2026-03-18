@@ -239,6 +239,39 @@ describe('GET /orders/my', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// GET /orders/restaurant/:restaurantId
+// ─────────────────────────────────────────────────────────────────────────────
+describe('GET /orders/restaurant/:restaurantId', () => {
+  it('returns restaurant orders (200, restaurantAdmin)', async () => {
+    const sortMock = jest.fn().mockResolvedValue([mockOrderDoc({ restaurantId: RESTAURANT_ID })]);
+    Order.find.mockReturnValue({ sort: sortMock });
+
+    const res = await request(app)
+      .get(`/orders/restaurant/${RESTAURANT_ID}`)
+      .set('Authorization', `Bearer ${makeToken('restaurantAdmin', 'owner_user')}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.orders).toHaveLength(1);
+    expect(Order.find).toHaveBeenCalledWith({ restaurantId: RESTAURANT_ID });
+  });
+
+  it('returns 401 when no token is provided', async () => {
+    const res = await request(app).get(`/orders/restaurant/${RESTAURANT_ID}`);
+    expect(res.status).toBe(401);
+  });
+
+  it('returns 403 for customer role', async () => {
+    const res = await request(app)
+      .get(`/orders/restaurant/${RESTAURANT_ID}`)
+      .set('Authorization', `Bearer ${makeToken('customer')}`);
+
+    expect(res.status).toBe(403);
+    expect(Order.find).not.toHaveBeenCalled();
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // GET /orders/:id
 // ─────────────────────────────────────────────────────────────────────────────
 describe('GET /orders/:id', () => {
@@ -341,6 +374,64 @@ describe('PATCH /orders/:id/status', () => {
       .patch(`/orders/${ORDER_ID}/status`)
       .set('x-internal-key', INTERNAL_KEY)
       .send({ status: 'DELIVERED' });
+
+    expect(res.status).toBe(404);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PATCH /orders/:id/restaurant-status
+// ─────────────────────────────────────────────────────────────────────────────
+describe('PATCH /orders/:id/restaurant-status', () => {
+  it('updates status with restaurantAdmin token (200)', async () => {
+    const doc = mockOrderDoc({ status: 'PAID' });
+    Order.findById.mockResolvedValue(doc);
+
+    const res = await request(app)
+      .patch(`/orders/${ORDER_ID}/restaurant-status`)
+      .set('Authorization', `Bearer ${makeToken('restaurantAdmin', 'owner_user')}`)
+      .send({ status: 'ASSIGNED_TO_RIDER' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.order.status).toBe('ASSIGNED_TO_RIDER');
+    expect(doc.save).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns 400 for invalid status value', async () => {
+    const res = await request(app)
+      .patch(`/orders/${ORDER_ID}/restaurant-status`)
+      .set('Authorization', `Bearer ${makeToken('restaurantAdmin', 'owner_user')}`)
+      .send({ status: 'PAID' });
+
+    expect(res.status).toBe(400);
+    expect(Order.findById).not.toHaveBeenCalled();
+  });
+
+  it('returns 401 when missing token', async () => {
+    const res = await request(app)
+      .patch(`/orders/${ORDER_ID}/restaurant-status`)
+      .send({ status: 'ASSIGNED_TO_RIDER' });
+
+    expect(res.status).toBe(401);
+  });
+
+  it('returns 403 for customer role', async () => {
+    const res = await request(app)
+      .patch(`/orders/${ORDER_ID}/restaurant-status`)
+      .set('Authorization', `Bearer ${makeToken('customer')}`)
+      .send({ status: 'ASSIGNED_TO_RIDER' });
+
+    expect(res.status).toBe(403);
+    expect(Order.findById).not.toHaveBeenCalled();
+  });
+
+  it('returns 404 when order not found', async () => {
+    Order.findById.mockResolvedValue(null);
+
+    const res = await request(app)
+      .patch(`/orders/${ORDER_ID}/restaurant-status`)
+      .set('Authorization', `Bearer ${makeToken('restaurantAdmin', 'owner_user')}`)
+      .send({ status: 'ASSIGNED_TO_RIDER' });
 
     expect(res.status).toBe(404);
   });
