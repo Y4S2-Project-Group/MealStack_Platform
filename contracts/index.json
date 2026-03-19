@@ -1,0 +1,25 @@
+{
+  "generatedAt": "2026-03-20T04:31:53.258Z",
+  "files": [
+    {
+      "service": "auth",
+      "file": "auth.openapi.json"
+    },
+    {
+      "service": "restaurant",
+      "file": "restaurant.openapi.json"
+    },
+    {
+      "service": "order",
+      "file": "order.openapi.json"
+    },
+    {
+      "service": "payment",
+      "file": "payment.openapi.json"
+    },
+    {
+      "service": "rider",
+      "file": "rider.openapi.json"
+    }
+  ]
+}

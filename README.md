@@ -32,11 +32,52 @@ docker-compose -f infra/docker-compose.dev.yml up --build
 Services will be available at:
 
 ```
+http://localhost:4000   API Gateway (single frontend entrypoint)
 http://localhost:4001   Auth
 http://localhost:4002   Restaurant
 http://localhost:4003   Order
 http://localhost:4004   Payment
 http://localhost:4005   Rider
+```
+
+Frontend integration note:
+
+```
+Use API Gateway as single base URL: http://localhost:4000
+Set CORS_ORIGINS in each service for browser clients.
+Example: CORS_ORIGINS=http://localhost:3000,http://localhost:5173
+```
+
+Gateway route map:
+
+```
+/auth/*         -> Auth Service
+/users/*        -> Auth Service
+/restaurants/*  -> Restaurant Service
+/orders/*       -> Order Service
+/payments/*     -> Payment Service
+/deliveries/*   -> Rider Service
+```
+
+Gateway docs passthrough:
+
+```
+/docs/auth
+/docs/restaurant
+/docs/order
+/docs/payment
+/docs/rider
+```
+
+Gateway OpenAPI contracts:
+
+```
+/openapi/index.json
+/openapi/auth.json
+/openapi/restaurant.json
+/openapi/order.json
+/openapi/payment.json
+/openapi/rider.json
 ```
 
 ---

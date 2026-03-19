@@ -18,7 +18,10 @@
     "lint": "eslint \"services/**/*.js\" \"shared/**/*.js\"",
     "lint:fix": "eslint \"services/**/*.js\" \"shared/**/*.js\" --fix",
     "format": "prettier --write \"services/**/*.js\" \"shared/**/*.js\"",
-    "docker:dev": "docker-compose -f infra/docker-compose.dev.yml up --build"
+    "docker:dev": "docker-compose -f infra/docker-compose.dev.yml up --build",
+    "contracts:export": "node scripts/export-openapi.js",
+    "contracts:check": "node scripts/check-contract-drift.js",
+    "contracts:policy-check": "node scripts/check-contract-policy.js"
   },
   "devDependencies": {
     "eslint": "^8.57.0",
