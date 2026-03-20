@@ -1,6 +1,5 @@
 'use strict';
-
-const authService              = require('../services/authService');
+const authService = require('../services/authService');
 const { registerSchema, loginSchema } = require('../middleware/validate');
 const { sendSuccess, sendError } = require('../../../../shared/utils/apiResponse');
 
@@ -30,7 +29,8 @@ async function register(req, res, next) {
     next(err);
   }
 }
-
+//small chnages
+//2nd small chnages
 // ── POST /auth/login ──────────────────────────────────────────────────────────
 async function login(req, res, next) {
   try {
