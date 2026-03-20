@@ -74,10 +74,10 @@ jobs:
                   cluster: ${{ env.ECS_CLUSTER }}
                   wait-for-service-stability: false
 
-            - name: Notify deployment
-              if: always()
-              uses: actions/github-script@v6
-              with:
-                  script: |
-                      const status = context.job.status === 'success' ? '✅ Success' : '❌ Failed';
-                      console.log(`Order Service deployment: ${status}`);
+            - name: Notify deployment success
+              if: success()
+              run: echo "✅ Order Service deployment succeeded"
+            
+            - name: Notify deployment failure
+              if: failure()
+              run: echo "❌ Order Service deployment failed"
