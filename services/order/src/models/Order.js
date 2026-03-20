@@ -50,6 +50,16 @@ const orderSchema = new mongoose.Schema(
   }
 );
 
+// ── Compound indexes for common queries ────────────────────────────────────────
+// Query orders by user and status (e.g., user's active orders)
+orderSchema.index({ userId: 1, status: 1 });
+// Query orders for a restaurant by status
+orderSchema.index({ restaurantId: 1, status: 1 });
+// Query orders by rider
+orderSchema.index({ 'rider.riderId': 1, status: 1 });
+// Query recent orders (for analytics)
+orderSchema.index({ createdAt: -1 });
+
 const Order = mongoose.model('Order', orderSchema);
 
 module.exports = Order;

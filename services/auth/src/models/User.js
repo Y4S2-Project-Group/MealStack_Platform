@@ -56,6 +56,11 @@ userSchema.statics.hashPassword = async function hashPassword(plain) {
   return bcrypt.hash(plain, config.bcryptRounds);
 };
 
+// ── Indexes ───────────────────────────────────────────────────────────────────
+// Email index is created by unique: true
+// Add compound index for role-based queries
+userSchema.index({ role: 1, createdAt: -1 });
+
 // Note: email index is already created by `unique: true` above — no explicit index needed.
 
 const User = mongoose.model('User', userSchema);

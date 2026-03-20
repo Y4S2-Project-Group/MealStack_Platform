@@ -42,4 +42,10 @@ const menuItemSchema = new mongoose.Schema(
   }
 );
 
+// ── Compound indexes for common queries ────────────────────────────────────────
+// Query available items for a restaurant
+menuItemSchema.index({ restaurantId: 1, isAvailable: 1 });
+// Text search on menu item names
+menuItemSchema.index({ name: 'text', description: 'text' });
+
 module.exports = mongoose.model('MenuItem', menuItemSchema);

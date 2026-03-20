@@ -4,12 +4,12 @@
   "requiresCompatibilities": ["FARGATE"],
   "cpu": "256",
   "memory": "512",
-  "executionRoleArn": "arn:aws:iam::ACCOUNT_ID:role/ecsTaskExecutionRole",
-  "taskRoleArn": "arn:aws:iam::ACCOUNT_ID:role/ecsTaskRole",
+  "executionRoleArn": "arn:aws:iam::013052902701:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::013052902701:role/ecsTaskRole",
   "containerDefinitions": [
     {
       "name": "auth",
-      "image": "ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/mealstack-cluster:auth-latest",
+      "image": "013052902701.dkr.ecr.us-east-1.amazonaws.com/mealstack-auth:latest",
       "portMappings": [
         {
           "containerPort": 4001,
@@ -38,11 +38,11 @@
       "secrets": [
         {
           "name": "MONGO_URI",
-          "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:mealstack/auth/MONGO_URI:MONGO_URI::"
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:013052902701:secret:mealstack/auth/MONGO_URI-y2VrET"
         },
         {
           "name": "JWT_SECRET",
-          "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:mealstack/auth/JWT_SECRET:JWT_SECRET::"
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:013052902701:secret:mealstack/auth/JWT_SECRET-8sTCad"
         }
       ],
       "healthCheck": {

@@ -11,20 +11,24 @@
 
 const logger        = require('./utils/logger');
 const apiResponse   = require('./utils/apiResponse');
+const httpClient    = require('./utils/httpClient');
 const errorHandler  = require('./middleware/errorHandler');
 const notFound      = require('./middleware/notFound');
 const requestContext = require('./middleware/requestContext');
 const contractVersionHeader = require('./middleware/contractVersionHeader');
 const requireAuth   = require('./middleware/requireAuth');
 const requireRole   = require('./middleware/requireRole');
+const rateLimiter   = require('./middleware/rateLimiter');
 
 module.exports = {
 	logger,
 	apiResponse,
+	httpClient,
 	errorHandler,
 	notFound,
 	requestContext,
 	contractVersionHeader,
 	requireAuth,
 	requireRole,
+	rateLimiter,
 };

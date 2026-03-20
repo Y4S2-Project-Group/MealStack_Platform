@@ -4,12 +4,12 @@
   "requiresCompatibilities": ["FARGATE"],
   "cpu": "256",
   "memory": "512",
-  "executionRoleArn": "arn:aws:iam::ACCOUNT_ID:role/ecsTaskExecutionRole",
-  "taskRoleArn": "arn:aws:iam::ACCOUNT_ID:role/ecsTaskRole",
+  "executionRoleArn": "arn:aws:iam::013052902701:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::013052902701:role/ecsTaskRole",
   "containerDefinitions": [
     {
       "name": "rider",
-      "image": "ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/mealstack-cluster:rider-latest",
+      "image": "013052902701.dkr.ecr.us-east-1.amazonaws.com/mealstack-rider:latest",
       "portMappings": [
         {
           "containerPort": 4005,
@@ -41,12 +41,20 @@
         {
           "name": "ORDER_SERVICE_URL",
           "value": "http://order-service.mealstack.local:4003"
+        },
+        {
+          "name": "INTERNAL_API_KEY",
+          "value": "prod-internal-key-change-me-later"
         }
       ],
       "secrets": [
         {
           "name": "MONGO_URI",
-          "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:mealstack/rider/MONGO_URI:MONGO_URI::"
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:013052902701:secret:mealstack/rider/MONGO_URI-n4NRZT"
+        },
+        {
+          "name": "JWT_SECRET",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:013052902701:secret:mealstack/auth/JWT_SECRET-8sTCad"
         }
       ],
       "healthCheck": {
