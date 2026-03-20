@@ -1,69 +1,69 @@
-{
-  "family": "rider",
-  "networkMode": "awsvpc",
-  "requiresCompatibilities": ["FARGATE"],
-  "cpu": "256",
-  "memory": "512",
-  "executionRoleArn": "arn:aws:iam::013052902701:role/ecsTaskExecutionRole",
-  "taskRoleArn": "arn:aws:iam::013052902701:role/ecsTaskRole",
-  "containerDefinitions": [
-    {
-      "name": "rider",
-      "image": "013052902701.dkr.ecr.us-east-1.amazonaws.com/mealstack-rider:latest",
-      "portMappings": [
+﻿{
+    "family": "rider",
+    "networkMode": "awsvpc",
+    "requiresCompatibilities": [
+        "FARGATE"
+    ],
+    "cpu": "256",
+    "memory": "512",
+    "taskRoleArn": "arn:aws:iam::013052902701:role/ecsTaskRole",
+    "executionRoleArn": "arn:aws:iam::013052902701:role/ecsTaskExecutionRole",
+    "containerDefinitions": [
         {
-          "containerPort": 4005,
-          "protocol": "tcp"
+            "name": "rider",
+            "image": "013052902701.dkr.ecr.us-east-1.amazonaws.com/mealstack-auth:e912493836013882022dd6dfb4901611528a5ec6",
+            "cpu": 0,
+            "portMappings": [
+                {
+                    "containerPort": 4005,
+                    "hostPort": 4005,
+                    "protocol": "tcp"
+                }
+            ],
+            "essential": true,
+            "environment": [
+                {
+                    "name": "AUTH_SERVICE_URL",
+                    "value": "http://auth-service.mealstack.local:4001"
+                },
+                {
+                    "name": "NODE_ENV",
+                    "value": "production"
+                },
+                {
+                    "name": "ORDER_SERVICE_URL",
+                    "value": "http://order-service.mealstack.local:4003"
+                },
+                {
+                    "name": "PORT",
+                    "value": "4005"
+                },
+                {
+                    "name": "INTERNAL_API_KEY",
+                    "value": "prod-internal-key-change-me-later"
+                }
+            ],
+            "mountPoints": [],
+            "volumesFrom": [],
+            "secrets": [
+                {
+                    "name": "MONGO_URI",
+                    "valueFrom": "arn:aws:secretsmanager:us-east-1:013052902701:secret:mealstack/rider/MONGO_URI-n4NRZT"
+                },
+                {
+                    "name": "JWT_SECRET",
+                    "valueFrom": "arn:aws:secretsmanager:us-east-1:013052902701:secret:mealstack/auth/JWT_SECRET-8sTCad"
+                }
+            ],
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-group": "/ecs/mealstack-cluster",
+                    "awslogs-region": "us-east-1",
+                    "awslogs-stream-prefix": "rider"
+                }
+            },
+            "systemControls": []
         }
-      ],
-      "essential": true,
-      "logConfiguration": {
-        "logDriver": "awslogs",
-        "options": {
-          "awslogs-group": "/ecs/mealstack-cluster",
-          "awslogs-region": "us-east-1",
-          "awslogs-stream-prefix": "rider"
-        }
-      },
-      "environment": [
-        {
-          "name": "PORT",
-          "value": "4005"
-        },
-        {
-          "name": "NODE_ENV",
-          "value": "production"
-        },
-        {
-          "name": "AUTH_SERVICE_URL",
-          "value": "http://auth-service.mealstack.local:4001"
-        },
-        {
-          "name": "ORDER_SERVICE_URL",
-          "value": "http://order-service.mealstack.local:4003"
-        },
-        {
-          "name": "INTERNAL_API_KEY",
-          "value": "prod-internal-key-change-me-later"
-        }
-      ],
-      "secrets": [
-        {
-          "name": "MONGO_URI",
-          "valueFrom": "arn:aws:secretsmanager:us-east-1:013052902701:secret:mealstack/rider/MONGO_URI-n4NRZT"
-        },
-        {
-          "name": "JWT_SECRET",
-          "valueFrom": "arn:aws:secretsmanager:us-east-1:013052902701:secret:mealstack/auth/JWT_SECRET-8sTCad"
-        }
-      ],
-      "healthCheck": {
-        "command": ["CMD-SHELL", "curl -f http://localhost:4005/health || exit 1"],
-        "interval": 30,
-        "timeout": 5,
-        "retries": 3,
-        "startPeriod": 60
-      }
-    }
-  ]
+    ]
 }
