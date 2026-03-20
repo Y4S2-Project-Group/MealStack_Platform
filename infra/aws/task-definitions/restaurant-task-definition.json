@@ -28,7 +28,7 @@
                 },
                 {
                     "name": "AUTH_SERVICE_URL",
-                    "value": "http://auth-service.mealstack.local:4001"
+                    "value": "http://mealstack-alb-1039407120.us-east-1.elb.amazonaws.com"
                 },
                 {
                     "name": "NODE_ENV",

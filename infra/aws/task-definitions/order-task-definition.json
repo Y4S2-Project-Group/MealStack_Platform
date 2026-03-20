@@ -24,7 +24,7 @@
             "environment": [
                 {
                     "name": "PAYMENT_SERVICE_URL",
-                    "value": "http://payment-service.mealstack.local:4004"
+                    "value": "http://mealstack-alb-1039407120.us-east-1.elb.amazonaws.com"
                 },
                 {
                     "name": "PORT",
@@ -32,7 +32,7 @@
                 },
                 {
                     "name": "RESTAURANT_SERVICE_URL",
-                    "value": "http://restaurant-service.mealstack.local:4002"
+                    "value": "http://mealstack-alb-1039407120.us-east-1.elb.amazonaws.com"
                 },
                 {
                     "name": "INTERNAL_API_KEY",
@@ -40,7 +40,7 @@
                 },
                 {
                     "name": "AUTH_SERVICE_URL",
-                    "value": "http://auth-service.mealstack.local:4001"
+                    "value": "http://mealstack-alb-1039407120.us-east-1.elb.amazonaws.com"
                 },
                 {
                     "name": "NODE_ENV",
@@ -52,7 +52,7 @@
                 },
                 {
                     "name": "RIDER_SERVICE_URL",
-                    "value": "http://rider-service.mealstack.local:4005"
+                    "value": "http://mealstack-alb-1039407120.us-east-1.elb.amazonaws.com"
                 }
             ],
             "mountPoints": [],
