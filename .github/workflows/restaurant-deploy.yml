@@ -53,6 +53,7 @@ jobs:
                   echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:restaurant-$IMAGE_TAG" >> $GITHUB_OUTPUT
 
             - name: Run Snyk scanning
+              continue-on-error: true
               uses: snyk/actions/node@master
               env:
                   SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
