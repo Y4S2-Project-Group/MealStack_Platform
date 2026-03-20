@@ -29,6 +29,10 @@
                 {
                     "name": "NODE_ENV",
                     "value": "production"
+                },
+                {
+                    "name": "CORS_ORIGINS",
+                    "value": "*"
                 }
             ],
             "mountPoints": [],

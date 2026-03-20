@@ -31,6 +31,10 @@
                     "value": "production"
                 },
                 {
+                    "name": "CORS_ORIGINS",
+                    "value": "*"
+                },
+                {
                     "name": "ORDER_SERVICE_URL",
                     "value": "http://order-service.mealstack.local:4003"
                 },

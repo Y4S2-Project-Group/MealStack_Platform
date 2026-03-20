@@ -47,6 +47,10 @@
                     "value": "production"
                 },
                 {
+                    "name": "CORS_ORIGINS",
+                    "value": "*"
+                },
+                {
                     "name": "RIDER_SERVICE_URL",
                     "value": "http://rider-service.mealstack.local:4005"
                 }
