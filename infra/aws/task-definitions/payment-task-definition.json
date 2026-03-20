@@ -1,0 +1,69 @@
+{
+  "family": "payment",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::ACCOUNT_ID:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::ACCOUNT_ID:role/ecsTaskRole",
+  "containerDefinitions": [
+    {
+      "name": "payment",
+      "image": "ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/mealstack-cluster:payment-latest",
+      "portMappings": [
+        {
+          "containerPort": 4004,
+          "protocol": "tcp"
+        }
+      ],
+      "essential": true,
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/mealstack-cluster",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "payment"
+        }
+      },
+      "environment": [
+        {
+          "name": "PORT",
+          "value": "4004"
+        },
+        {
+          "name": "NODE_ENV",
+          "value": "production"
+        },
+        {
+          "name": "AUTH_SERVICE_URL",
+          "value": "http://auth-service.mealstack.local:4001"
+        },
+        {
+          "name": "ORDER_SERVICE_URL",
+          "value": "http://order-service.mealstack.local:4003"
+        }
+      ],
+      "secrets": [
+        {
+          "name": "MONGO_URI",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:mealstack/payment/MONGO_URI:MONGO_URI::"
+        },
+        {
+          "name": "STRIPE_SECRET_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:mealstack/payment/STRIPE_SECRET_KEY:STRIPE_SECRET_KEY::"
+        },
+        {
+          "name": "STRIPE_WEBHOOK_SECRET",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:mealstack/payment/STRIPE_WEBHOOK_SECRET:STRIPE_WEBHOOK_SECRET::"
+        }
+      ],
+      "healthCheck": {
+        "command": ["CMD-SHELL", "curl -f http://localhost:4004/health || exit 1"],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 60
+      }
+    }
+  ]
+}

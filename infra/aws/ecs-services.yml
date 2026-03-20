@@ -1,0 +1,228 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'MealStack Platform - ECS Services Definition'
+
+Parameters:
+  ClusterName:
+    Type: String
+    Default: mealstack-cluster
+    Description: ECS Cluster name
+  
+  ServiceName:
+    Type: String
+    Description: Name of the service (auth, restaurant, order, payment, rider)
+  
+  ContainerImage:
+    Type: String
+    Description: Container image URI from ECR
+  
+  ContainerPort:
+    Type: Number
+    Description: Container port number
+  
+  DesiredCount:
+    Type: Number
+    Default: 2
+    Description: Desired number of running tasks
+  
+  TaskCpu:
+    Type: String
+    Default: '256'
+    AllowedValues: ['256', '512', '1024', '2048', '4096']
+    Description: Task CPU units
+  
+  TaskMemory:
+    Type: String
+    Default: '512'
+    AllowedValues: ['512', '1024', '2048', '3072', '4096', '5120', '6144', '7168', '8192']
+    Description: Task memory in MB
+  
+  Environment:
+    Type: String
+    Default: production
+    AllowedValues: [development, production]
+
+  EnvFileS3Bucket:
+    Type: String
+    Description: S3 bucket containing .env files
+
+  EnvFileKey:
+    Type: String
+    Description: S3 key path to the .env file for this service
+
+Conditions:
+  IsProduction: !Equals [!Ref Environment, 'production']
+
+Resources:
+  # ──────────────────────────────────────────────────────────
+  # ECS Service
+  # ──────────────────────────────────────────────────────────
+  ECSService:
+    Type: AWS::ECS::Service
+    DependsOn: TargetGroupRule
+    Properties:
+      ServiceName: !Sub '${ServiceName}-service'
+      Cluster: 
+        Fn::ImportValue: !Sub '${ClusterName}-ClusterId'
+      TaskDefinition: !Ref TaskDefinition
+      DesiredCount: !Ref DesiredCount
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          Subnets:
+            - Fn::ImportValue: !Sub '${ClusterName}-PrivateSubnet1'
+            - Fn::ImportValue: !Sub '${ClusterName}-PrivateSubnet2'
+          SecurityGroups:
+            - Fn::ImportValue: !Sub '${ClusterName}-TaskSecurityGroup'
+      LoadBalancers:
+        - ContainerName: !Ref ServiceName
+          ContainerPort: !Ref ContainerPort
+          TargetGroupArn:
+            Fn::ImportValue: !Sub '${ClusterName}-TargetGroupArn'
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 100
+        DeploymentCircuitBreaker:
+          Enable: true
+          Rollback: true
+      EnableECSManagedTags: true
+      PropagateTags: TaskDefinition
+      Tags:
+        - Key: Service
+          Value: !Ref ServiceName
+        - Key: Environment
+          Value: !Ref Environment
+
+  # ──────────────────────────────────────────────────────────
+  # Auto-Scaling
+  # ──────────────────────────────────────────────────────────
+  ServiceScalingTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Condition: IsProduction
+    Properties:
+      MaxCapacity: 4
+      MinCapacity: 2
+      ResourceId: !Sub 'service/${ClusterName}/${ServiceName}-service'
+      RoleARN: !Sub 'arn:aws:iam::${AWS::AccountId}:role/aws-service-role/ecs.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_ECSService'
+      ScalableDimension: ecs:service:DesiredCount
+      ServiceNamespace: ecs
+
+  ServiceScalingPolicy:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Condition: IsProduction
+    Properties:
+      PolicyName: !Sub '${ServiceName}-cpu-scaling'
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId: !Ref ServiceScalingTarget
+      TargetTrackingScalingPolicyConfiguration:
+        TargetValue: 70.0
+        PredefinedMetricSpecification:
+          PredefinedMetricType: ECSServiceAverageCPUUtilization
+        ScaleOutCooldown: 60
+        ScaleInCooldown: 300
+
+  # ──────────────────────────────────────────────────────────
+  # Task Definition
+  # ──────────────────────────────────────────────────────────
+  TaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: !Ref ServiceName
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      Cpu: !Ref TaskCpu
+      Memory: !Ref TaskMemory
+      ExecutionRoleArn:
+        Fn::ImportValue: !Sub '${ClusterName}-TaskExecutionRole'
+      TaskRoleArn:
+        Fn::ImportValue: !Sub '${ClusterName}-TaskRole'
+      ContainerDefinitions:
+        - Name: !Ref ServiceName
+          Image: !Ref ContainerImage
+          PortMappings:
+            - ContainerPort: !Ref ContainerPort
+              Protocol: tcp
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group:
+                Fn::ImportValue: !Sub '${ClusterName}-LogGroup'
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: !Ref ServiceName
+          Environment:
+            - Name: PORT
+              Value: !Ref ContainerPort
+            - Name: NODE_ENV
+              Value: !Ref Environment
+          RepositoryCredentials:
+            CredentialsParameter:
+              Fn::ImportValue: !Sub '${ClusterName}-ECRRepo'
+          Essential: true
+          HealthCheck:
+            Command:
+              - CMD-SHELL
+              - 'curl -f http://localhost:'"${ContainerPort}"'/health || exit 1'
+            Interval: 30
+            Timeout: 5
+            Retries: 3
+            StartPeriod: 60
+      Tags:
+        - Key: Service
+          Value: !Ref ServiceName
+        - Key: Environment
+          Value: !Ref Environment
+
+  # ──────────────────────────────────────────────────────────
+  # Load Balancer Target Group Rule
+  # ──────────────────────────────────────────────────────────
+  TargetGroupRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      ListenerArn:
+        Fn::ImportValue: !Sub '${ClusterName}-ALBListener'
+      Priority: !Sub '${ContainerPort}'
+      Actions:
+        - Type: forward
+          TargetGroupArn:
+            Fn::ImportValue: !Sub '${ClusterName}-TargetGroupArn'
+      Conditions:
+        - Field: path-pattern
+          Values:
+            - !Sub '/${ServiceName}*'
+
+  # ──────────────────────────────────────────────────────────
+  # Service Discovery Namespace
+  # ──────────────────────────────────────────────────────────
+  ServiceDiscoveryService:
+    Type: AWS::ServiceDiscovery::Service
+    Properties:
+      Name: !Ref ServiceName
+      DnsConfig:
+        NamespaceId:
+          Fn::ImportValue: !Sub '${ClusterName}-NamespaceId'
+        DnsRecords:
+          - Type: A
+            TTL: 300
+      Tags:
+        - Key: Service
+          Value: !Ref ServiceName
+
+Outputs:
+  ServiceArn:
+    Description: ECS Service ARN
+    Value: !GetAtt ECSService.ServiceArn
+    Export:
+      Name: !Sub '${ServiceName}-ServiceArn'
+
+  ServiceName:
+    Description: ECS Service Name
+    Value: !GetAtt ECSService.Name
+    Export:
+      Name: !Sub '${ServiceName}-ServiceName'
+
+  TaskDefinitionArn:
+    Description: Task Definition ARN
+    Value: !Ref TaskDefinition
+    Export:
+      Name: !Sub '${ServiceName}-TaskDefinitionArn'

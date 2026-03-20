@@ -1,0 +1,57 @@
+{
+  "family": "auth",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::ACCOUNT_ID:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::ACCOUNT_ID:role/ecsTaskRole",
+  "containerDefinitions": [
+    {
+      "name": "auth",
+      "image": "ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/mealstack-cluster:auth-latest",
+      "portMappings": [
+        {
+          "containerPort": 4001,
+          "protocol": "tcp"
+        }
+      ],
+      "essential": true,
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/mealstack-cluster",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "auth"
+        }
+      },
+      "environment": [
+        {
+          "name": "PORT",
+          "value": "4001"
+        },
+        {
+          "name": "NODE_ENV",
+          "value": "production"
+        }
+      ],
+      "secrets": [
+        {
+          "name": "MONGO_URI",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:mealstack/auth/MONGO_URI:MONGO_URI::"
+        },
+        {
+          "name": "JWT_SECRET",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:mealstack/auth/JWT_SECRET:JWT_SECRET::"
+        }
+      ],
+      "healthCheck": {
+        "command": ["CMD-SHELL", "curl -f http://localhost:4001/health || exit 1"],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 60
+      }
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+{
+  "family": "order",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::ACCOUNT_ID:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::ACCOUNT_ID:role/ecsTaskRole",
+  "containerDefinitions": [
+    {
+      "name": "order",
+      "image": "ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/mealstack-cluster:order-latest",
+      "portMappings": [
+        {
+          "containerPort": 4003,
+          "protocol": "tcp"
+        }
+      ],
+      "essential": true,
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/mealstack-cluster",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "order"
+        }
+      },
+      "environment": [
+        {
+          "name": "PORT",
+          "value": "4003"
+        },
+        {
+          "name": "NODE_ENV",
+          "value": "production"
+        },
+        {
+          "name": "AUTH_SERVICE_URL",
+          "value": "http://auth-service.mealstack.local:4001"
+        },
+        {
+          "name": "PAYMENT_SERVICE_URL",
+          "value": "http://payment-service.mealstack.local:4004"
+        },
+        {
+          "name": "RESTAURANT_SERVICE_URL",
+          "value": "http://restaurant-service.mealstack.local:4002"
+        }
+      ],
+      "secrets": [
+        {
+          "name": "MONGO_URI",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:mealstack/order/MONGO_URI:MONGO_URI::"
+        }
+      ],
+      "healthCheck": {
+        "command": ["CMD-SHELL", "curl -f http://localhost:4003/health || exit 1"],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 60
+      }
+    }
+  ]
+}
