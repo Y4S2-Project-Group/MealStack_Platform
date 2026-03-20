@@ -46,10 +46,8 @@ jobs:
               run: |
                   docker build -f services/restaurant/Dockerfile \
                     -t $ECR_REGISTRY/$ECR_REPOSITORY:restaurant-$IMAGE_TAG \
-                    -t $ECR_REGISTRY/$ECR_REPOSITORY:restaurant-latest \
                     .
                   docker push $ECR_REGISTRY/$ECR_REPOSITORY:restaurant-$IMAGE_TAG
-                  docker push $ECR_REGISTRY/$ECR_REPOSITORY:restaurant-latest
                   echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:restaurant-$IMAGE_TAG" >> $GITHUB_OUTPUT
 
             - name: Run Snyk scanning
