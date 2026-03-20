@@ -1,8 +1,13 @@
 # ── Stage 1: dependencies ──────────────────────────────────────────────────────
 FROM node:20-slim AS deps
-WORKDIR /app
+WORKDIR /app/services/auth
 
-COPY package.json ./
+COPY services/auth/package.json ./
+RUN npm install --omit=dev --ignore-scripts
+
+# Install shared dependencies
+WORKDIR /app/shared
+COPY shared/package.json ./
 RUN npm install --omit=dev --ignore-scripts
 
 # ── Stage 2: production image ──────────────────────────────────────────────────
@@ -14,14 +19,18 @@ LABEL org.opencontainers.image.description="MealStack Auth Service"
 RUN groupadd --gid 1001 nodejs && \
     useradd --uid 1001 --gid nodejs --shell /bin/bash --create-home appuser
 
-WORKDIR /app
+WORKDIR /app/services/auth
 
 # Copy production node_modules from deps stage
-COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/services/auth/node_modules ./node_modules
+
+# Copy shared modules and dependencies
+COPY shared /app/shared
+COPY --from=deps /app/shared/node_modules /app/shared/node_modules
 
 # Copy application source
-COPY src ./src
-COPY package.json ./
+COPY services/auth/src ./src
+COPY services/auth/package.json ./
 
 # Set ownership
 RUN chown -R appuser:nodejs /app

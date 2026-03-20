@@ -1,8 +1,13 @@
 # ── Stage 1: dependencies ──────────────────────────────────────────────────────
 FROM node:20-slim AS deps
-WORKDIR /app
+WORKDIR /app/services/payment
 
-COPY package.json ./
+COPY services/payment/package.json ./
+RUN npm install --omit=dev --ignore-scripts
+
+# Install shared dependencies
+WORKDIR /app/shared
+COPY shared/package.json ./
 RUN npm install --omit=dev --ignore-scripts
 
 # ── Stage 2: production image ──────────────────────────────────────────────────
@@ -13,11 +18,16 @@ LABEL org.opencontainers.image.description="MealStack Payment Service"
 RUN groupadd --gid 1001 nodejs && \
     useradd --uid 1001 --gid nodejs --shell /bin/bash --create-home appuser
 
-WORKDIR /app
+WORKDIR /app/services/payment
 
-COPY --from=deps /app/node_modules ./node_modules
-COPY src ./src
-COPY package.json ./
+COPY --from=deps /app/services/payment/node_modules ./node_modules
+
+# Copy shared modules and dependencies
+COPY shared /app/shared
+COPY --from=deps /app/shared/node_modules /app/shared/node_modules
+
+COPY services/payment/src ./src
+COPY services/payment/package.json ./
 
 RUN chown -R appuser:nodejs /app
 USER appuser
