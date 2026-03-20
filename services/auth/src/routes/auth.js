@@ -2,7 +2,7 @@
 
 const { Router } = require('express');
 const { register, login } = require('../controllers/authController');
-
+//routes
 const router = Router();
 
 /**
