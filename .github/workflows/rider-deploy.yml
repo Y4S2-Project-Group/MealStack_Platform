@@ -11,7 +11,7 @@ on:
 
 env:
     AWS_REGION: us-east-1
-    ECR_REPOSITORY: ${{ secrets.AWS_ECR_REPOSITORY_NAME }}
+    ECR_REPOSITORY: mealstack-rider
     ECS_CLUSTER: mealstack-cluster
     ECS_SERVICE: rider-service
     CONTAINER_NAME: rider
