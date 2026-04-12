@@ -10,7 +10,7 @@ on:
     workflow_dispatch:
 
 env:
-    AWS_REGION: eu-north-1
+    AWS_REGION: ap-south-1
     ECR_REPOSITORY: mealstack-restaurant
     ECS_CLUSTER: mealstack-cluster
     ECS_SERVICE: restaurant-service

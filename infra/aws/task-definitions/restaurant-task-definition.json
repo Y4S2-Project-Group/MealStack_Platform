@@ -11,7 +11,7 @@
     "containerDefinitions": [
         {
             "name": "restaurant",
-            "image": "945488516083.dkr.ecr.eu-north-1.amazonaws.com/mealstack-auth:restaurant-e912493836013882022dd6dfb4901611528a5ec6",
+            "image": "945488516083.dkr.ecr.ap-south-1.amazonaws.com/mealstack-auth:restaurant-e912493836013882022dd6dfb4901611528a5ec6",
             "cpu": 0,
             "portMappings": [
                 {
@@ -28,7 +28,7 @@
                 },
                 {
                     "name": "AUTH_SERVICE_URL",
-                    "value": "http://mealstack-alb-1494783241.eu-north-1.elb.amazonaws.com"
+                    "value": "http://mealstack-alb-1222463843.ap-south-1.elb.amazonaws.com"
                 },
                 {
                     "name": "NODE_ENV",
@@ -44,18 +44,18 @@
             "secrets": [
                 {
                     "name": "MONGO_URI",
-                    "valueFrom": "arn:aws:secretsmanager:us-east-1:945488516083:secret:mealstack/restaurant/MONGO_URI-w0jjfb"
+                    "valueFrom": "arn:aws:secretsmanager:ap-south-1:945488516083:secret:mealstack/restaurant/MONGO_URI-DaBC0M"
                 },
                 {
                     "name": "JWT_SECRET",
-                    "valueFrom": "arn:aws:secretsmanager:us-east-1:945488516083:secret:mealstack/auth/JWT_SECRET-rHriv3"
+                    "valueFrom": "arn:aws:secretsmanager:ap-south-1:945488516083:secret:mealstack/auth/JWT_SECRET-GbJJZI"
                 }
             ],
             "logConfiguration": {
                 "logDriver": "awslogs",
                 "options": {
                     "awslogs-group": "/ecs/mealstack-cluster",
-                    "awslogs-region": "eu-north-1",
+                    "awslogs-region": "ap-south-1",
                     "awslogs-stream-prefix": "restaurant"
                 }
             },
