@@ -11,7 +11,8 @@ interface RequestOptions {
 }
 
 // Use Vite's built-in environment variable support
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
+// Empty string = same-origin (used with Vercel rewrites to proxy API calls)
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '';
 const DEFAULT_TIMEOUT = Number(import.meta.env.VITE_API_TIMEOUT_MS || 10000);
 
 function normalizeError(payload: unknown, status: number): ApiFailure {
