@@ -114,21 +114,52 @@ export default function MenuManagement() {
 
   return (
     <div className="p-4 max-w-3xl mx-auto space-y-5 pb-8">
+      {/* No Restaurant State */}
+      {!loadingRestaurants && !selectedRestaurant && (
+        <Card className="border-dashed">
+          <CardContent className="p-6 text-center space-y-4">
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+              <UtensilsCrossed className="h-8 w-8 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold">No Restaurant Found</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                You need to create a restaurant profile before managing menu items.
+              </p>
+            </div>
+            <Button 
+              onClick={() => window.location.href = '/restaurant/profile'} 
+              className="gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Create Restaurant Profile
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-display font-bold">Menu Items</h1>
-          <p className="text-xs text-muted-foreground mt-0.5">{myItems.length} items · {availableCount} available</p>
-          {selectedRestaurant && <p className="text-[11px] text-muted-foreground mt-0.5">Restaurant: {selectedRestaurant.name}</p>}
-        </div>
-        <Button size="sm" className="gap-1.5 rounded-full px-4 shadow-sm" onClick={() => setShowAddForm(!showAddForm)}>
-          <Plus className="h-3.5 w-3.5" /> Add Item
-        </Button>
-      </div>
+      {selectedRestaurant && (
+        <>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-xl font-display font-bold">Menu Items</h1>
+              <p className="text-xs text-muted-foreground mt-0.5">{myItems.length} items · {availableCount} available</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">Restaurant: {selectedRestaurant.name}</p>
+            </div>
+            <Button size="sm" className="gap-1.5 rounded-full px-4 shadow-sm" onClick={() => setShowAddForm(!showAddForm)}>
+              <Plus className="h-3.5 w-3.5" /> Add Item
+            </Button>
+          </div>
+        </>
+      )}
+
       {(loadingRestaurants || loadingItems) && <p className="text-sm text-muted-foreground">Loading menu...</p>}
 
       {/* Stats strip */}
-      <div className="grid grid-cols-3 gap-3">
+      {selectedRestaurant && (
+        <>
+        <div className="grid grid-cols-3 gap-3">
         {[
           { label: "Total Items", value: myItems.length, icon: UtensilsCrossed, color: "text-primary" },
           { label: "Available", value: availableCount, icon: Package, color: "text-accent" },
@@ -245,6 +276,8 @@ export default function MenuManagement() {
             Clear Filters
           </Button>
         </div>
+      )}
+      </>
       )}
     </div>
   );

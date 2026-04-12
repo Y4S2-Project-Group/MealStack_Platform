@@ -1,4 +1,4 @@
-﻿{
+{
     "family": "auth",
     "networkMode": "awsvpc",
     "requiresCompatibilities": [
@@ -6,12 +6,12 @@
     ],
     "cpu": "256",
     "memory": "512",
-    "taskRoleArn": "arn:aws:iam::013052902701:role/ecsTaskRole",
-    "executionRoleArn": "arn:aws:iam::013052902701:role/ecsTaskExecutionRole",
+    "taskRoleArn": "arn:aws:iam::945488516083:role/ecsTaskRole",
+    "executionRoleArn": "arn:aws:iam::945488516083:role/ecsTaskExecutionRole",
     "containerDefinitions": [
         {
             "name": "auth",
-            "image": "013052902701.dkr.ecr.us-east-1.amazonaws.com/mealstack-auth:e912493836013882022dd6dfb4901611528a5ec6",
+            "image": "945488516083.dkr.ecr.eu-north-1.amazonaws.com/mealstack-auth:e912493836013882022dd6dfb4901611528a5ec6",
             "cpu": 0,
             "portMappings": [
                 {
@@ -40,18 +40,18 @@
             "secrets": [
                 {
                     "name": "MONGO_URI",
-                    "valueFrom": "arn:aws:secretsmanager:us-east-1:013052902701:secret:mealstack/auth/MONGO_URI-y2VrET"
+                    "valueFrom": "arn:aws:secretsmanager:us-east-1:945488516083:secret:mealstack/auth/MONGO_URI-mBL05T"
                 },
                 {
                     "name": "JWT_SECRET",
-                    "valueFrom": "arn:aws:secretsmanager:us-east-1:013052902701:secret:mealstack/auth/JWT_SECRET-8sTCad"
+                    "valueFrom": "arn:aws:secretsmanager:us-east-1:945488516083:secret:mealstack/auth/JWT_SECRET-rHriv3"
                 }
             ],
             "logConfiguration": {
                 "logDriver": "awslogs",
                 "options": {
                     "awslogs-group": "/ecs/mealstack-cluster",
-                    "awslogs-region": "us-east-1",
+                    "awslogs-region": "eu-north-1",
                     "awslogs-stream-prefix": "auth"
                 }
             },

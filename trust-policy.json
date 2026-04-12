@@ -4,15 +4,15 @@
     {
       "Effect": "Allow",
       "Principal": {
-        "Federated": "arn:aws:iam::013052902701:oidc-provider/token.actions.githubusercontent.com"
+        "Federated": "arn:aws:iam::945488516083:oidc-provider/token.actions.githubusercontent.com"
       },
       "Action": "sts:AssumeRoleWithWebIdentity",
       "Condition": {
+        "StringLike": {
+          "token.actions.githubusercontent.com:sub": "repo:Y4S2-Project-Group/MealStack_Platform:*"
+        },
         "StringEquals": {
           "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
-        },
-        "StringLike": {
-          "token.actions.githubusercontent.com:sub": "repo:ThisalDeelaka/MealStack_Platform:*"
         }
       }
     }

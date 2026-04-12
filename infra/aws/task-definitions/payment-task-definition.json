@@ -1,4 +1,4 @@
-﻿{
+{
     "family": "payment",
     "networkMode": "awsvpc",
     "requiresCompatibilities": [
@@ -6,12 +6,12 @@
     ],
     "cpu": "256",
     "memory": "512",
-    "taskRoleArn": "arn:aws:iam::013052902701:role/ecsTaskRole",
-    "executionRoleArn": "arn:aws:iam::013052902701:role/ecsTaskExecutionRole",
+    "taskRoleArn": "arn:aws:iam::945488516083:role/ecsTaskRole",
+    "executionRoleArn": "arn:aws:iam::945488516083:role/ecsTaskExecutionRole",
     "containerDefinitions": [
         {
             "name": "payment",
-            "image": "013052902701.dkr.ecr.us-east-1.amazonaws.com/mealstack-auth:e912493836013882022dd6dfb4901611528a5ec6",
+            "image": "945488516083.dkr.ecr.eu-north-1.amazonaws.com/mealstack-auth:e912493836013882022dd6dfb4901611528a5ec6",
             "cpu": 0,
             "portMappings": [
                 {
@@ -40,7 +40,7 @@
                 },
                 {
                     "name": "AUTH_SERVICE_URL",
-                    "value": "http://mealstack-alb-1039407120.us-east-1.elb.amazonaws.com"
+                    "value": "http://mealstack-alb-1494783241.eu-north-1.elb.amazonaws.com"
                 },
                 {
                     "name": "NODE_ENV",
@@ -52,7 +52,7 @@
                 },
                 {
                     "name": "ORDER_SERVICE_URL",
-                    "value": "http://mealstack-alb-1039407120.us-east-1.elb.amazonaws.com"
+                    "value": "http://mealstack-alb-1494783241.eu-north-1.elb.amazonaws.com"
                 }
             ],
             "mountPoints": [],
@@ -60,26 +60,26 @@
             "secrets": [
                 {
                     "name": "MONGO_URI",
-                    "valueFrom": "arn:aws:secretsmanager:us-east-1:013052902701:secret:mealstack/payment/MONGO_URI-AleeF4"
+                    "valueFrom": "arn:aws:secretsmanager:us-east-1:945488516083:secret:mealstack/payment/MONGO_URI-TZyjOy"
                 },
                 {
                     "name": "JWT_SECRET",
-                    "valueFrom": "arn:aws:secretsmanager:us-east-1:013052902701:secret:mealstack/auth/JWT_SECRET-8sTCad"
+                    "valueFrom": "arn:aws:secretsmanager:us-east-1:945488516083:secret:mealstack/auth/JWT_SECRET-rHriv3"
                 },
                 {
                     "name": "STRIPE_SECRET_KEY",
-                    "valueFrom": "arn:aws:secretsmanager:us-east-1:013052902701:secret:mealstack/payment/STRIPE_SECRET_KEY-tus1el"
+                    "valueFrom": "arn:aws:secretsmanager:us-east-1:945488516083:secret:mealstack/payment/STRIPE_SECRET_KEY-nJBGOS"
                 },
                 {
                     "name": "STRIPE_WEBHOOK_SECRET",
-                    "valueFrom": "arn:aws:secretsmanager:us-east-1:013052902701:secret:mealstack/payment/STRIPE_WEBHOOK_SECRET-o8tDfB"
+                    "valueFrom": "arn:aws:secretsmanager:us-east-1:945488516083:secret:mealstack/payment/STRIPE_WEBHOOK_SECRET-ZiOHSi"
                 }
             ],
             "logConfiguration": {
                 "logDriver": "awslogs",
                 "options": {
                     "awslogs-group": "/ecs/mealstack-cluster",
-                    "awslogs-region": "us-east-1",
+                    "awslogs-region": "eu-north-1",
                     "awslogs-stream-prefix": "payment"
                 }
             },

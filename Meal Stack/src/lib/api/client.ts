@@ -10,13 +10,9 @@ interface RequestOptions {
   timeoutMs?: number;
 }
 
-const runtimeConfig = globalThis as {
-  __MEALSTACK_API_BASE_URL__?: string;
-  __MEALSTACK_API_TIMEOUT_MS__?: string | number;
-};
-
-const API_BASE_URL = runtimeConfig.__MEALSTACK_API_BASE_URL__ || 'http://localhost:4000';
-const DEFAULT_TIMEOUT = Number(runtimeConfig.__MEALSTACK_API_TIMEOUT_MS__ || 10000);
+// Use Vite's built-in environment variable support
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
+const DEFAULT_TIMEOUT = Number(import.meta.env.VITE_API_TIMEOUT_MS || 10000);
 
 function normalizeError(payload: unknown, status: number): ApiFailure {
   const obj = payload as {
