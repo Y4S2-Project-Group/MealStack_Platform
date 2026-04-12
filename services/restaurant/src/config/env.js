@@ -8,6 +8,7 @@ const envSchema = z.object({
   PORT:       z.string().default('4002'),
   MONGO_URI:  z.string().min(1, 'MONGO_URI is required'),
   JWT_SECRET: z.string().min(16, 'JWT_SECRET must be at least 16 characters'),
+  INTERNAL_API_KEY: z.string().min(8).default('dev-internal-key-change-me'),
   LOG_LEVEL:  z.enum(['error', 'warn', 'info', 'debug']).default('info'),
 });
 
@@ -26,6 +27,7 @@ module.exports = {
   port:         parseInt(env.PORT, 10),
   mongoUri:     env.MONGO_URI,
   jwtSecret:    env.JWT_SECRET,
+  internalApiKey: env.INTERNAL_API_KEY,
   logLevel:     env.LOG_LEVEL,
   isProduction: env.NODE_ENV === 'production',
   isTest:       env.NODE_ENV === 'test',

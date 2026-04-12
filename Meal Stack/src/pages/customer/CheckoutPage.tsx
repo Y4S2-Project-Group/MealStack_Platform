@@ -1,10 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useNavigate } from "react-router-dom";
-import { MapPin, CreditCard, Wallet } from "lucide-react";
+import { MapPin, CreditCard } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useCart } from "@/contexts/CartContext";
@@ -12,7 +11,6 @@ import { orderApi } from "@/lib/api";
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
-  const [paymentMethod, setPaymentMethod] = useState("card");
   const [submitting, setSubmitting] = useState(false);
   const { items, restaurantId, subtotal, deliveryFee, total, clearCart } = useCart();
 
@@ -73,35 +71,11 @@ export default function CheckoutPage() {
           <CardContent className="p-4 space-y-3">
             <div className="flex items-center gap-2">
               <CreditCard className="h-4 w-4 text-primary" />
-              <h2 className="text-sm font-semibold">Payment Method</h2>
+              <h2 className="text-sm font-semibold">Payment</h2>
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                { id: "card", label: "Credit Card", icon: CreditCard },
-                { id: "cash", label: "Cash", icon: Wallet },
-              ].map(({ id, label, icon: Icon }) => (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => setPaymentMethod(id)}
-                  className={`flex items-center gap-2 p-3 rounded-lg border text-sm font-medium transition-colors ${
-                    paymentMethod === id ? "border-primary bg-primary/5 text-primary" : "border-border text-muted-foreground hover:border-primary/30"
-                  }`}
-                >
-                  <Icon className="h-4 w-4" />
-                  {label}
-                </button>
-              ))}
-            </div>
-            {paymentMethod === "card" && (
-              <div className="space-y-2">
-                <Input placeholder="Card number" defaultValue="•••• •••• •••• 4242" className="bg-background" />
-                <div className="grid grid-cols-2 gap-2">
-                  <Input placeholder="MM/YY" defaultValue="12/25" className="bg-background" />
-                  <Input placeholder="CVC" defaultValue="•••" className="bg-background" />
-                </div>
-              </div>
-            )}
+            <p className="text-sm text-muted-foreground">
+              You will be securely redirected to Stripe to complete your payment after placing the order.
+            </p>
           </CardContent>
         </Card>
 

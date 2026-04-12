@@ -46,7 +46,8 @@ async function validateCartItems(restaurantId, items) {
   try {
     const { data } = await restaurantHttp.post(
       `/restaurants/${restaurantId}/menu/validate`,
-      { items }
+      { items },
+      { headers: internalHeaders() }
     );
     return data;
   } catch (err) {

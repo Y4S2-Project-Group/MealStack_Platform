@@ -12,6 +12,8 @@ import RestaurantDetail from "@/pages/customer/RestaurantDetail";
 import CartPage from "@/pages/customer/CartPage";
 import CheckoutPage from "@/pages/customer/CheckoutPage";
 import OrderTracking from "@/pages/customer/OrderTracking";
+import PaymentSuccessPage from "@/pages/customer/PaymentSuccessPage";
+import PaymentCancelPage from "@/pages/customer/PaymentCancelPage";
 import CustomerProfile from "@/pages/customer/CustomerProfile";
 import RestaurantDashboard from "@/pages/restaurant/RestaurantDashboard";
 import MenuManagement from "@/pages/restaurant/MenuManagement";
@@ -56,6 +58,8 @@ function AppRoutes() {
         <Route path="/customer/cart" element={<CartPage />} />
         <Route path="/customer/checkout" element={<CheckoutPage />} />
         <Route path="/customer/tracking" element={<OrderTracking />} />
+        <Route path="/customer/payment/success" element={<PaymentSuccessPage />} />
+        <Route path="/customer/payment/cancel" element={<PaymentCancelPage />} />
         <Route path="/customer/profile" element={<CustomerProfile />} />
 
         {/* Restaurant */}

@@ -35,6 +35,10 @@
                     "value": "production"
                 },
                 {
+                    "name": "INTERNAL_API_KEY",
+                    "value": "prod-internal-key-change-me-later"
+                },
+                {
                     "name": "CORS_ORIGINS",
                     "value": "*"
                 }

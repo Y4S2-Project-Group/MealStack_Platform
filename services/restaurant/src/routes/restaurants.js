@@ -4,6 +4,8 @@ const { Router } = require('express');
 
 const requireAuth = require('../../../../shared/middleware/requireAuth');
 const requireRole = require('../../../../shared/middleware/requireRole');
+const { sendError } = require('../../../../shared/utils/apiResponse');
+const env = require('../config/env');
 const {
   createRestaurant,
   listRestaurants,
@@ -18,6 +20,19 @@ const {
 } = require('../controllers/menuController');
 
 const router = Router();
+
+// ── Internal API key guard ────────────────────────────────────────────────────
+function requireInternalKey(req, res, next) {
+  const key = req.headers['x-internal-key'];
+  if (!key || key !== env.internalApiKey) {
+    return sendError(res, req, {
+      status: 401,
+      code: 'UNAUTHORIZED_INTERNAL_KEY',
+      message: 'Missing or invalid internal API key',
+    });
+  }
+  next();
+}
 
 // ── Restaurants ───────────────────────────────────────────────────────────────
 router.post(
@@ -56,6 +71,6 @@ router.delete(
 router.get('/restaurants/:id/menu/items', listMenuItems);
 
 // ── Integration helper (called by Order Service) ──────────────────────────────
-router.post('/restaurants/:id/menu/validate', validateMenuItems);
+router.post('/restaurants/:id/menu/validate', requireInternalKey, validateMenuItems);
 
 module.exports = router;

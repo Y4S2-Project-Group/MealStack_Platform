@@ -12,8 +12,8 @@ const envSchema = z.object({
   STRIPE_WEBHOOK_SECRET: z.string().min(1, 'STRIPE_WEBHOOK_SECRET is required'),
   ORDER_SERVICE_URL:     z.string().url('ORDER_SERVICE_URL must be a valid URL'),
   INTERNAL_API_KEY:      z.string().min(8).default('dev-internal-key-change-me'),
-  CHECKOUT_SUCCESS_URL:  z.string().url().default('http://localhost:3000/payment/success'),
-  CHECKOUT_CANCEL_URL:   z.string().url().default('http://localhost:3000/payment/cancel'),
+  CHECKOUT_SUCCESS_URL:  z.string().url().default('http://localhost:8080/customer/payment/success'),
+  CHECKOUT_CANCEL_URL:   z.string().url().default('http://localhost:8080/customer/payment/cancel'),
   LOG_LEVEL:             z.enum(['error', 'warn', 'info', 'debug']).default('info'),
 });
 
