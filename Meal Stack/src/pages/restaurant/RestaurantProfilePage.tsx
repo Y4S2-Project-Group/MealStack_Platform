@@ -21,10 +21,10 @@ export default function RestaurantProfile() {
   });
 
   const myRestaurant = useMemo(() => {
-    if (!restaurants.length) {
+    if (!restaurants.length || !user?.id) {
       return null;
     }
-    return restaurants.find((r) => r.ownerUserId === user?.id) || restaurants[0];
+    return restaurants.find((r) => r.ownerUserId === user.id) ?? null;
   }, [restaurants, user?.id]);
 
   const handleCreate = async () => {
