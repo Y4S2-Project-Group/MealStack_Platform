@@ -32,6 +32,12 @@ const orderSchema = new mongoose.Schema(
     items:        { type: [orderItemSchema], required: true, validate: { validator: (v) => v.length > 0, message: 'items must not be empty' } },
     total:        { type: Number, required: true, min: 0 },
     status:       { type: String, enum: ORDER_STATUSES, default: 'PENDING_PAYMENT', index: true },
+    deliveryAddress: {
+      street:     { type: String },
+      city:       { type: String },
+      postalCode: { type: String },
+      phone:      { type: String },
+    },
     payment: {
       provider:          { type: String, default: 'stripe' },
       checkoutSessionId: { type: String },

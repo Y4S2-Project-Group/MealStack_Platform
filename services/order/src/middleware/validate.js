@@ -15,6 +15,12 @@ const createOrderSchema = z.object({
       })
     )
     .min(1, 'At least one item is required'),
+  deliveryAddress: z.object({
+    street:     z.string().min(1, 'street is required'),
+    city:       z.string().min(1, 'city is required'),
+    postalCode: z.string().min(1, 'postalCode is required'),
+    phone:      z.string().optional(),
+  }).optional(),
 });
 
 // ── PATCH /orders/:id/status ──────────────────────────────────────────────────

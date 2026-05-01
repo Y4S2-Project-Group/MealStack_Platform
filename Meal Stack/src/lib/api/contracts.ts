@@ -42,6 +42,12 @@ export interface Order {
   total: number;
   status: 'CREATED' | 'PENDING_PAYMENT' | 'PAID' | 'RESTAURANT_ACCEPTED' | 'RESTAURANT_REJECTED' | 'ASSIGNED_TO_RIDER' | 'READY_FOR_PICKUP' | 'PICKED_UP' | 'DELIVERED';
   createdAt: string;
+  deliveryAddress?: {
+    street: string;
+    city: string;
+    postalCode: string;
+    phone?: string;
+  };
   payment?: {
     checkoutSessionId?: string;
     paymentStatus?: 'pending' | 'paid' | 'failed';

@@ -26,7 +26,7 @@ async function createOrder(req, res, next) {
       });
     }
 
-    const { restaurantId, items } = parsed.data;
+    const { restaurantId, items, deliveryAddress } = parsed.data;
     const userId = req.user.userId;
 
     // 1) Validate items against Restaurant Service
@@ -48,6 +48,7 @@ async function createOrder(req, res, next) {
       items:  validation.items,
       total:  validation.total,
       status: 'PENDING_PAYMENT',
+      deliveryAddress: deliveryAddress || undefined,
     });
 
     // 3) Create payment checkout session

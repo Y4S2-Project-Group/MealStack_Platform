@@ -148,7 +148,7 @@ export default function RiderDashboard() {
       <h1 className="text-xl font-display font-bold">Rider Dashboard</h1>
 
       {/* ── Active Delivery Card ─────────────────────────────────────────── */}
-      {activeDelivery && !isDelivered && activeOrder && (
+      {activeDelivery && !isDelivered && (
         <Card className="border-0 shadow-md overflow-hidden">
           <div className="h-1 bg-gradient-to-r from-primary to-accent" />
           <CardContent className="p-4 space-y-4">
@@ -173,6 +173,23 @@ export default function RiderDashboard() {
                  liveStatus ?? "Loading..."}
               </Badge>
             </div>
+
+            {/* Delivery Address */}
+            {activeOrder?.deliveryAddress && (
+              <div className="bg-blue-50 rounded-lg p-3 space-y-1">
+                <div className="flex items-start gap-2">
+                  <MapPin className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                  <div className="text-xs">
+                    <p className="font-semibold text-foreground">Delivery Address:</p>
+                    <p className="text-muted-foreground">{activeOrder.deliveryAddress.street}</p>
+                    <p className="text-muted-foreground">{activeOrder.deliveryAddress.city}, {activeOrder.deliveryAddress.postalCode}</p>
+                    {activeOrder.deliveryAddress.phone && (
+                      <p className="text-muted-foreground mt-1">📞 {activeOrder.deliveryAddress.phone}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Progress stepper */}
             <div className="flex items-center justify-between">
@@ -223,7 +240,7 @@ export default function RiderDashboard() {
                 <Button
                   className="flex-1 gap-2"
                   variant={canMarkPickedUp ? "default" : "outline"}
-                  disabled={updating}
+                  disabled={updating || !canMarkPickedUp}
                   onClick={() => void handleUpdateStatus("PICKED_UP")}
                 >
                   <Package className="h-4 w-4" />
@@ -232,7 +249,7 @@ export default function RiderDashboard() {
               )}
               {isPickedUp && (
                 <Button
-                  className="flex-1 gap-2"
+                  className="flex-1 gap-2 bg-green-600 hover:bg-green-700"
                   disabled={updating}
                   onClick={() => void handleUpdateStatus("DELIVERED")}
                 >
@@ -242,9 +259,14 @@ export default function RiderDashboard() {
               )}
             </div>
 
-            {!isPickedUp && !canMarkPickedUp && (
+            {!isPickedUp && !canMarkPickedUp && activeOrder && (
               <p className="text-[10px] text-muted-foreground text-center">
-                Waiting for restaurant to mark order as ready.
+                Waiting for restaurant to mark order as ready. Status: {liveStatus}
+              </p>
+            )}
+            {!isPickedUp && !activeOrder && (
+              <p className="text-[10px] text-muted-foreground text-center">
+                Loading order details...
               </p>
             )}
             {isPickedUp && (
