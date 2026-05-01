@@ -15,7 +15,6 @@ import { toast } from "sonner";
 import { useCart } from "@/contexts/CartContext";
 
 function getRestaurantImage(restaurant: { _id: string; imageUrl?: string }) {
-  // Use Cloudinary image if available, otherwise fallback to placeholder
   return (
     restaurant.imageUrl ||
     `https://picsum.photos/seed/restaurant-${restaurant._id}/1200/500`
@@ -23,11 +22,7 @@ function getRestaurantImage(restaurant: { _id: string; imageUrl?: string }) {
 }
 
 function getMenuItemImage(item: { _id: string; imageUrl?: string }) {
-  // Use Cloudinary image if available, otherwise fallback to placeholder
-  return (
-    item.imageUrl ||
-    `https://picsum.photos/seed/menu-${item._id}/400/300`
-  );
+  return item.imageUrl || `https://picsum.photos/seed/menu-${item._id}/400/300`;
 }
 
 export default function RestaurantDetail() {
@@ -81,7 +76,7 @@ export default function RestaurantDetail() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto pb-28">
+    <div className="max-w-3xl mx-auto pb-8">
       {/* Hero Banner */}
       <div className="relative">
         <img
@@ -215,18 +210,16 @@ export default function RestaurantDetail() {
         ))}
       </div>
 
-      {/* Floating cart CTA - fixed alignment */}
+      {/* Bottom cart CTA - aligned with restaurant and menu content */}
       {itemCount > 0 && (
-        <div className="fixed bottom-20 md:bottom-6 left-0 md:left-[170px] right-0 z-30 pointer-events-none">
-          <div className="max-w-3xl mx-auto px-5 pointer-events-auto">
-            <Button
-              className="w-full h-14 rounded-2xl shadow-2xl text-base font-bold gap-2 hover:scale-[1.02] transition-all"
-              onClick={() => navigate("/customer/cart")}
-            >
-              View Cart ({itemCount})
-              <ChevronRight className="h-5 w-5" />
-            </Button>
-          </div>
+        <div className="sticky bottom-6 z-30 px-5 mt-10">
+          <Button
+            className="w-full h-14 rounded-2xl shadow-2xl text-base font-bold gap-2 hover:scale-[1.02] transition-all"
+            onClick={() => navigate("/customer/cart")}
+          >
+            View Cart ({itemCount})
+            <ChevronRight className="h-5 w-5" />
+          </Button>
         </div>
       )}
     </div>
