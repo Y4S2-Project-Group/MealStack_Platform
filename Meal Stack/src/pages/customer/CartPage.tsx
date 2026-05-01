@@ -5,8 +5,8 @@ import { Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { useCart } from "@/contexts/CartContext";
 
-function imageForMenu(id: string) {
-  return `https://picsum.photos/seed/cart-${id}/100/100`;
+function getMenuItemImage(item: { menuItemId: string; imageUrl?: string }) {
+  return item.imageUrl || `https://picsum.photos/seed/menu-${item.menuItemId}/400/300`;
 }
 
 export default function CartPage() {
@@ -35,7 +35,7 @@ export default function CartPage() {
             {items.map((item) => (
               <Card key={item.menuItemId} className="overflow-hidden shadow-md border-0">
                 <CardContent className="p-4 flex items-center gap-4">
-                  <img src={imageForMenu(item.menuItemId)} alt={item.name} className="w-20 h-20 rounded-xl object-cover shadow-sm" />
+                  <img src={getMenuItemImage(item)} alt={item.name} className="w-20 h-20 rounded-xl object-cover shadow-sm" />
                   <div className="flex-1 min-w-0">
                     <h3 className="text-base font-bold truncate">{item.name}</h3>
                     <p className="text-lg font-bold text-primary mt-1">LKR {item.unitPrice.toFixed(2)}</p>
