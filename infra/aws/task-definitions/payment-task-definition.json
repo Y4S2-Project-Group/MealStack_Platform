@@ -28,11 +28,11 @@
                 },
                 {
                     "name": "CHECKOUT_CANCEL_URL",
-                    "value": "http://mealstack-alb-1222463843.ap-south-1.elb.amazonaws.com/payments/cancel"
+                    "value": "http://localhost:8081/customer/payment/cancel"
                 },
                 {
                     "name": "CHECKOUT_SUCCESS_URL",
-                    "value": "http://mealstack-alb-1222463843.ap-south-1.elb.amazonaws.com/payments/success"
+                    "value": "http://localhost:8081/customer/payment/success"
                 },
                 {
                     "name": "INTERNAL_API_KEY",
