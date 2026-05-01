@@ -65,12 +65,23 @@ export default function RiderDashboard() {
   });
 
   // Live order status for the active delivery
-  const { data: activeOrder } = useQuery({
+  const { data: activeOrder, isError: orderFetchError } = useQuery({
     queryKey: ["rider-active-order", activeDelivery?.orderId],
     queryFn: () => orderApi.getOrder(activeDelivery!.orderId),
     enabled: Boolean(activeDelivery?.orderId),
     refetchInterval: 6000,
+    retry: 1, // Only retry once
   });
+
+  // Clear stale active delivery if order doesn't exist
+  useEffect(() => {
+    if (activeDelivery && orderFetchError) {
+      console.warn("Active delivery order not found in database, clearing localStorage");
+      clearActiveDelivery();
+      setActiveDelivery(null);
+      toast.error("Active delivery no longer exists");
+    }
+  }, [activeDelivery, orderFetchError]);
 
   // ── Accept a new delivery ─────────────────────────────────────────────────
   const handleAccept = async (orderId: string) => {
@@ -137,7 +148,7 @@ export default function RiderDashboard() {
       <h1 className="text-xl font-display font-bold">Rider Dashboard</h1>
 
       {/* ── Active Delivery Card ─────────────────────────────────────────── */}
-      {activeDelivery && !isDelivered && (
+      {activeDelivery && !isDelivered && activeOrder && (
         <Card className="border-0 shadow-md overflow-hidden">
           <div className="h-1 bg-gradient-to-r from-primary to-accent" />
           <CardContent className="p-4 space-y-4">
