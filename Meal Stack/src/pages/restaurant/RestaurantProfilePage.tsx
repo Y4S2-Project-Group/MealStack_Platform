@@ -52,7 +52,52 @@ export default function RestaurantProfile() {
     // Validate file type
     if (!file.type.startsWith('image/')) {
       toast.error('Please select an image file');
-      return{myRestaurant?.imageUrl ? (
+      return;
+    }
+
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image size must be less than 5MB');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      await restaurantApi.uploadRestaurantImage(myRestaurant._id, file);
+      await queryClient.invalidateQueries({ queryKey: ["restaurants"] });
+      toast.success("Restaurant image updated");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to upload image");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleDeleteImage = async () => {
+    if (!myRestaurant?._id || !myRestaurant.imageUrl) return;
+    
+    if (!window.confirm('Delete restaurant image?')) return;
+
+    try {
+      await restaurantApi.deleteRestaurantImage(myRestaurant._id);
+      await queryClient.invalidateQueries({ queryKey: ["restaurants"] });
+      toast.success("Restaurant image deleted");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to delete image");
+    }
+  };
+
+  return (
+    <div className="p-4 max-w-lg mx-auto space-y-4">
+      <h1 className="text-xl font-display font-bold">Restaurant Profile</h1>
+
+      <Card>
+        <CardContent className="p-4 space-y-4">
+          <div className="flex items-center gap-3">
+            {myRestaurant?.imageUrl ? (
               <div className="relative w-14 h-14 rounded-full overflow-hidden bg-muted">
                 <img src={myRestaurant.imageUrl} alt={myRestaurant.name} className="w-full h-full object-cover" />
                 {myRestaurant && (
@@ -110,51 +155,6 @@ export default function RestaurantProfile() {
               </p>
             </div>
           )}
-
-    setUploading(true);
-    try {
-      await restaurantApi.uploadRestaurantImage(myRestaurant._id, file);
-      await queryClient.invalidateQueries({ queryKey: ["restaurants"] });
-      toast.success("Restaurant image updated");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to upload image");
-    } finally {
-      setUploading(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    }
-  };
-
-  const handleDeleteImage = async () => {
-    if (!myRestaurant?._id || !myRestaurant.imageUrl) return;
-    
-    if (!window.confirm('Delete restaurant image?')) return;
-
-    try {
-      await restaurantApi.deleteRestaurantImage(myRestaurant._id);
-      await queryClient.invalidateQueries({ queryKey: ["restaurants"] });
-      toast.success("Restaurant image deleted");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to delete image");
-    }
-  };
-
-  return (
-    <div className="p-4 max-w-lg mx-auto space-y-4">
-      <h1 className="text-xl font-display font-bold">Restaurant Profile</h1>
-
-      <Card>
-        <CardContent className="p-4 space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
-              <Store className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <h2 className="font-semibold">{user?.name}</h2>
-              <p className="text-xs text-muted-foreground">{user?.email}</p>
-            </div>
-          </div>
 
           {isLoading && <p className="text-sm text-muted-foreground">Loading restaurant profile...</p>}
 
