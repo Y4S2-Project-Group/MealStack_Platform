@@ -10,6 +10,7 @@ const {
   createRestaurant,
   listRestaurants,
   getRestaurant,
+  claimRestaurant,
 } = require('../controllers/restaurantController');
 const {
   createMenuItem,
@@ -52,6 +53,14 @@ router.post(
 router.get('/restaurants', listRestaurants);
 
 router.get('/restaurants/:id', getRestaurant);
+
+// ── Claim Restaurant Ownership ────────────────────────────────────────────────
+router.post(
+  '/restaurants/:id/claim',
+  requireAuth,
+  requireRole('restaurantAdmin'),
+  claimRestaurant
+);
 
 // ── Restaurant Image Upload ───────────────────────────────────────────────────
 router.post(

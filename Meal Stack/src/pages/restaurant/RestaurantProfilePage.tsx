@@ -90,6 +90,20 @@ export default function RestaurantProfile() {
     }
   };
 
+  const handleClaimRestaurant = async (restaurantId: string) => {
+    try {
+      await restaurantApi.claimRestaurant(restaurantId);
+      await queryClient.invalidateQueries({ queryKey: ["restaurants"] });
+      toast.success("Restaurant claimed successfully!");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to claim restaurant");
+    }
+  };
+
+  const unclaimedRestaurants = useMemo(() => {
+    return restaurants.filter((r) => !r.ownerUserId || r.ownerUserId === '');
+  }, [restaurants]);
+
   return (
     <div className="p-5 max-w-2xl mx-auto space-y-6">
       <div>
@@ -219,6 +233,40 @@ export default function RestaurantProfile() {
           )}
         </CardContent>
       </Card>
+
+      {/* Show unclaimed restaurants if user doesn't own one */}
+      {!myRestaurant && unclaimedRestaurants.length > 0 && (
+        <Card className="shadow-lg border-yellow-300 bg-yellow-50">
+          <CardContent className="p-6 space-y-4">
+            <div>
+              <h3 className="text-lg font-bold text-yellow-900">🔑 Claim an Existing Restaurant</h3>
+              <p className="text-sm text-yellow-800 mt-1">
+                The following restaurants don't have an owner yet. Click "Claim" to take ownership.
+              </p>
+            </div>
+            <div className="space-y-3">
+              {unclaimedRestaurants.map((restaurant) => (
+                <div
+                  key={restaurant._id}
+                  className="flex items-center justify-between p-4 bg-white rounded-xl border border-yellow-200"
+                >
+                  <div>
+                    <h4 className="font-semibold text-gray-900">{restaurant.name}</h4>
+                    <p className="text-sm text-gray-600">{restaurant.address}</p>
+                    <p className="text-xs text-gray-500 mt-1">ID: {restaurant._id}</p>
+                  </div>
+                  <Button
+                    onClick={() => void handleClaimRestaurant(restaurant._id)}
+                    className="bg-yellow-600 hover:bg-yellow-700"
+                  >
+                    Claim Restaurant
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

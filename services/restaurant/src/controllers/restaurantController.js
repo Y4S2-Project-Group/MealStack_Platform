@@ -75,4 +75,45 @@ async function getRestaurant(req, res, next) {
   }
 }
 
-module.exports = { createRestaurant, listRestaurants, getRestaurant };
+// ── PATCH /restaurants/:id/claim ─────────────────────────────────────────────
+async function claimRestaurant(req, res, next) {
+  try {
+    const restaurant = await Restaurant.findById(req.params.id);
+    if (!restaurant) {
+      return sendError(res, req, {
+        status: 404,
+        code: 'RESTAURANT_NOT_FOUND',
+        message: 'Restaurant not found',
+      });
+    }
+
+    // Check if restaurant already has an owner
+    if (restaurant.ownerUserId && restaurant.ownerUserId !== req.user.userId) {
+      return sendError(res, req, {
+        status: 403,
+        code: 'RESTAURANT_ALREADY_CLAIMED',
+        message: 'This restaurant is already claimed by another owner',
+      });
+    }
+
+    // Claim the restaurant
+    restaurant.ownerUserId = req.user.userId;
+    await restaurant.save();
+
+    logger.info('[restaurant] Restaurant claimed', { 
+      restaurantId: restaurant._id, 
+      ownerUserId: req.user.userId 
+    });
+
+    return sendSuccess(res, req, {
+      status: 200,
+      message: 'Restaurant claimed successfully',
+      data: { restaurant },
+      legacy: { restaurant },
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { createRestaurant, listRestaurants, getRestaurant, claimRestaurant };

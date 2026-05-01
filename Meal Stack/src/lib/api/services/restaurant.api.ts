@@ -17,6 +17,11 @@ export const restaurantApi = {
     return res.data?.restaurant || (res as unknown as { restaurant?: Restaurant }).restaurant;
   },
 
+  async claimRestaurant(restaurantId: string) {
+    const res = await apiClient.post<{ restaurant: Restaurant }>(`/restaurants/${restaurantId}/claim`, {});
+    return res.data?.restaurant || (res as unknown as { restaurant?: Restaurant }).restaurant;
+  },
+
   async listMenuItems(restaurantId: string) {
     const res = await apiClient.get<{ items: MenuItem[] }>(`/restaurants/${restaurantId}/menu/items`);
     return res.data?.items || (res as unknown as { items?: MenuItem[] }).items || [];
