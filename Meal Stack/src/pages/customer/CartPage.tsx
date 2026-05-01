@@ -33,7 +33,7 @@ export default function CartPage() {
                   <img src={imageForMenu(item.menuItemId)} alt={item.name} className="w-16 h-16 rounded-lg object-cover" />
                   <div className="flex-1">
                     <h3 className="text-sm font-semibold">{item.name}</h3>
-                    <p className="text-sm font-bold text-primary">${item.unitPrice.toFixed(2)}</p>
+                    <p className="text-sm font-bold text-primary">LKR {item.unitPrice.toFixed(2)}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.menuItemId, item.quantity - 1)}><Minus className="h-3 w-3" /></Button>
@@ -48,10 +48,10 @@ export default function CartPage() {
 
           <Card>
             <CardContent className="p-4 space-y-2 text-sm">
-              <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>${subtotal.toFixed(2)}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Delivery Fee</span><span>${deliveryFee.toFixed(2)}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>LKR {subtotal.toFixed(2)}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Delivery Fee</span><span>LKR {deliveryFee.toFixed(2)}</span></div>
               <Separator />
-              <div className="flex justify-between font-bold text-base"><span>Total</span><span className="text-primary">${total.toFixed(2)}</span></div>
+              <div className="flex justify-between font-bold text-base"><span>Total</span><span className="text-primary">LKR {total.toFixed(2)}</span></div>
             </CardContent>
           </Card>
 

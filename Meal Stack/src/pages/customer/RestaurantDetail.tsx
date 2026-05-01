@@ -106,7 +106,7 @@ export default function RestaurantDetail() {
           20-35 min
         </span>
         <span className="w-1 h-1 rounded-full bg-border" />
-        <span>$2.99 delivery</span>
+        <span>LKR 299 delivery</span>
       </div>
 
       {/* Description */}
@@ -149,7 +149,7 @@ export default function RestaurantDetail() {
                 </div>
                 <div className="flex items-center justify-between mt-3">
                   <span className="text-base font-bold text-primary">
-                    ${item.price.toFixed(2)}
+                    LKR {item.price.toFixed(2)}
                   </span>
                   <Button
                     size="sm"

@@ -84,13 +84,13 @@ export default function CheckoutPage() {
           <CardContent className="p-4 space-y-2 text-sm">
             <h2 className="font-semibold">Order Summary</h2>
             {items.map((item) => (
-              <div key={item.menuItemId} className="flex justify-between"><span className="text-muted-foreground">{item.name} × {item.quantity}</span><span>${(item.unitPrice * item.quantity).toFixed(2)}</span></div>
+              <div key={item.menuItemId} className="flex justify-between"><span className="text-muted-foreground">{item.name} × {item.quantity}</span><span>LKR {(item.unitPrice * item.quantity).toFixed(2)}</span></div>
             ))}
             <Separator />
-            <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>${subtotal.toFixed(2)}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">Delivery Fee</span><span>${deliveryFee.toFixed(2)}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>LKR {subtotal.toFixed(2)}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Delivery Fee</span><span>LKR {deliveryFee.toFixed(2)}</span></div>
             <Separator />
-            <div className="flex justify-between font-bold text-base"><span>Total</span><span className="text-primary">${total.toFixed(2)}</span></div>
+            <div className="flex justify-between font-bold text-base"><span>Total</span><span className="text-primary">LKR {total.toFixed(2)}</span></div>
           </CardContent>
         </Card>
 

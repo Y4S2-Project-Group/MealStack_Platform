@@ -143,7 +143,7 @@ export default function CustomerHome() {
                   <CardContent className="p-3">
                     <h3 className="font-semibold text-sm truncate">{r.name}</h3>
                     <p className="text-[10px] text-muted-foreground flex items-center gap-1 mt-1">
-                      <Clock className="h-2.5 w-2.5" />20-35 min · $2.99 delivery
+                      <Clock className="h-2.5 w-2.5" />20-35 min · LKR 299 delivery
                     </p>
                   </CardContent>
                 </Card>
