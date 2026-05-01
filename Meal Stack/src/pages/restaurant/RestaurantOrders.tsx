@@ -283,6 +283,25 @@ export default function RestaurantOrders() {
         {selectedRestaurant && (
           <p className="text-[11px] text-muted-foreground mt-1">Restaurant: {selectedRestaurant.name}</p>
         )}
+        {!selectedRestaurant && restaurants.length > 0 && (
+          <Card className="border-yellow-300 bg-yellow-50 mt-3">
+            <CardContent className="p-4">
+              <p className="text-sm font-semibold text-yellow-900 mb-2">⚠️ No Restaurant Found</p>
+              <p className="text-xs text-yellow-800 mb-2">
+                Could not find a restaurant owned by your user account.
+              </p>
+              <div className="text-[11px] text-yellow-700 space-y-1">
+                <p>Your User ID: {user?.id || 'Not found'}</p>
+                <p>Available Restaurants: {restaurants.length}</p>
+                <div className="mt-2 space-y-1">
+                  {restaurants.map((r, idx) => (
+                    <p key={idx}>• {r.name} (Owner ID: {r.ownerUserId || 'Not set'})</p>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Active Orders */}
