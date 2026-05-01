@@ -44,12 +44,16 @@ async function parseJsonSafe(response: Response): Promise<unknown> {
   }
 }
 
-function buildHeaders(custom?: Record<string, string>) {
+function buildHeaders(custom?: Record<string, string>, isFormData = false) {
   const token = tokenStore.get();
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
     ...custom,
   };
+
+  // Don't set Content-Type for FormData - browser will set it with boundary
+  if (!isFormData && !custom?.['Content-Type']) {
+    headers['Content-Type'] = 'application/json';
+  }
 
   if (token) {
     headers.Authorization = `Bearer ${token}`;
@@ -69,10 +73,13 @@ export async function apiRequest<T = unknown>(
   const timeout = setTimeout(() => controller.abort(), options.timeoutMs ?? DEFAULT_TIMEOUT);
 
   try {
+    // Check if body is FormData (for file uploads)
+    const isFormData = options.body instanceof FormData;
+    
     const response = await fetch(`${API_BASE_URL}${path}`, {
       method: options.method || 'GET',
-      headers: buildHeaders(options.headers),
-      body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+      headers: buildHeaders(options.headers, isFormData),
+      body: options.body !== undefined ? (isFormData ? options.body : JSON.stringify(options.body)) : undefined,
       signal: controller.signal,
     });
 

@@ -43,11 +43,7 @@ export const restaurantApi = {
   async uploadRestaurantImage(restaurantId: string, file: File) {
     const formData = new FormData();
     formData.append('image', file);
-    const res = await apiClient.post<{ imageUrl: string }>(`/restaurants/${restaurantId}/upload-image`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    const res = await apiClient.post<{ imageUrl: string }>(`/restaurants/${restaurantId}/upload-image`, formData);
     return res.data?.imageUrl || (res as unknown as { imageUrl?: string }).imageUrl;
   },
 
@@ -58,11 +54,7 @@ export const restaurantApi = {
   async uploadMenuItemImage(restaurantId: string, itemId: string, file: File) {
     const formData = new FormData();
     formData.append('image', file);
-    const res = await apiClient.post<{ imageUrl: string }>(`/restaurants/${restaurantId}/menu/items/${itemId}/upload-image`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    const res = await apiClient.post<{ imageUrl: string }>(`/restaurants/${restaurantId}/menu/items/${itemId}/upload-image`, formData);
     return res.data?.imageUrl || (res as unknown as { imageUrl?: string }).imageUrl;
   },
 
