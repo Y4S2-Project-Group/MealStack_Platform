@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="256" fill="#E86252"/>
+  
+  <!-- Plate/Bowl -->
+  <ellipse cx="256" cy="320" rx="180" ry="140" fill="#FFF" opacity="0.95"/>
+  <ellipse cx="256" cy="305" rx="160" ry="120" fill="#FFDAD0"/>
+  
+  <!-- Food items (burger/meal) -->
+  <!-- Bottom bun -->
+  <ellipse cx="256" cy="290" rx="80" ry="30" fill="#F4A460"/>
+  
+  <!-- Patty -->
+  <ellipse cx="256" cy="265" rx="85" ry="22" fill="#8B4513"/>
+  
+  <!-- Lettuce -->
+  <path d="M 176 250 Q 186 245 196 248 Q 206 246 216 249 Q 226 247 236 250 Q 246 248 256 251 Q 266 249 276 252 Q 286 250 296 253 Q 306 251 316 254 Q 326 252 336 255 L 336 265 Q 326 262 316 264 Q 306 261 296 263 Q 286 260 276 262 Q 266 259 256 261 Q 246 258 236 260 Q 226 257 216 259 Q 206 256 196 258 Q 186 255 176 258 Z" fill="#90EE90"/>
+  
+  <!-- Cheese -->
+  <polygon points="175,242 337,242 345,252 167,252" fill="#FFD700"/>
+  
+  <!-- Top bun -->
+  <ellipse cx="256" cy="230" rx="90" ry="35" fill="#DEB887"/>
+  <ellipse cx="256" cy="225" rx="90" ry="30" fill="#F4A460"/>
+  
+  <!-- Sesame seeds -->
+  <circle cx="226" cy="220" r="4" fill="#FFF"/>
+  <circle cx="246" cy="218" r="4" fill="#FFF"/>
+  <circle cx="266" cy="217" r="4" fill="#FFF"/>
+  <circle cx="286" cy="219" r="4" fill="#FFF"/>
+  <circle cx="236" cy="227" r="3" fill="#FFF"/>
+  <circle cx="276" cy="226" r="3" fill="#FFF"/>
+  
+  <!-- Fork and Knife icons -->
+  <!-- Fork -->
+  <g transform="translate(140, 240)">
+    <rect x="0" y="0" width="3" height="70" rx="1.5" fill="#FFF" opacity="0.9"/>
+    <rect x="6" y="0" width="3" height="70" rx="1.5" fill="#FFF" opacity="0.9"/>
+    <rect x="12" y="0" width="3" height="70" rx="1.5" fill="#FFF" opacity="0.9"/>
+    <rect x="0" y="0" width="15" height="25" rx="2" fill="#FFF" opacity="0.9"/>
+  </g>
+  
+  <!-- Knife -->
+  <g transform="translate(357, 240)">
+    <rect x="0" y="0" width="5" height="70" rx="2.5" fill="#FFF" opacity="0.9"/>
+    <polygon points="0,0 5,0 7,20 -2,20" fill="#FFF" opacity="0.9"/>
+  </g>
+</svg>
