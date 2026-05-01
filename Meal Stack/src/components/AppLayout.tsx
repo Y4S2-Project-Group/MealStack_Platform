@@ -42,39 +42,41 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {/* Top bar */}
-      <header className="sticky top-0 z-40 bg-card border-b px-4 py-3 flex items-center justify-between">
+      <header className="sticky top-0 z-40 bg-card border-b px-5 py-4 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-3">
-          <span className="text-xl font-display font-bold text-primary">Meal Stack</span>
-          <span className="text-xs bg-secondary text-secondary-foreground px-2 py-0.5 rounded-full capitalize">{user.role}</span>
+          <span className="text-2xl font-display font-bold text-primary">Meal Stack</span>
+          <Badge className="text-xs px-3 py-1 capitalize shadow-sm">{user.role}</Badge>
         </div>
         <div className="flex items-center gap-2">
           {/* Notification bell */}
           <Sheet open={notifOpen} onOpenChange={setNotifOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="relative">
+              <Button variant="ghost" size="icon" className="relative hover:bg-muted/50">
                 <Bell className="h-5 w-5" />
                 {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] rounded-full w-4 h-4 flex items-center justify-center">{unreadCount}</span>
+                  <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-md">{unreadCount}</span>
                 )}
               </Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-80">
-              <SheetTitle className="text-lg font-semibold mb-4">Notifications</SheetTitle>
+              <SheetTitle className="text-xl font-bold mb-5">Notifications</SheetTitle>
               <div className="space-y-3">
                 {notifications.map((n) => (
-                  <div key={n.id} className={`p-3 rounded-lg border ${n.read ? "bg-background" : "bg-secondary/50"}`}>
-                    <div className="flex items-center justify-between mb-1">
-                      <p className="text-sm font-medium">{n.title}</p>
-                      {!n.read && <Badge className="text-[10px] h-4">New</Badge>}
+                  <div key={n.id} className={`p-4 rounded-xl border transition-all ${
+                    n.read ? "bg-background hover:bg-muted/50" : "bg-secondary/30 hover:bg-secondary/50 border-secondary"
+                  }`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-sm font-semibold">{n.title}</p>
+                      {!n.read && <Badge className="text-xs h-5 px-2">New</Badge>}
                     </div>
-                    <p className="text-xs text-muted-foreground">{n.message}</p>
-                    <p className="text-[10px] text-muted-foreground mt-1">{n.time}</p>
+                    <p className="text-xs text-muted-foreground leading-relaxed">{n.message}</p>
+                    <p className="text-xs text-muted-foreground/70 mt-2">{n.time}</p>
                   </div>
                 ))}
               </div>
             </SheetContent>
           </Sheet>
-          <Button variant="ghost" size="icon" onClick={() => { logout(); navigate("/"); }}>
+          <Button variant="ghost" size="icon" className="hover:bg-muted/50" onClick={() => { logout(); navigate("/"); }}>
             <LogOut className="h-5 w-5" />
           </Button>
         </div>
@@ -83,18 +85,20 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       {/* Desktop sidebar + content layout */}
       <div className="flex flex-1">
         {/* Desktop sidebar */}
-        <aside className="hidden md:flex flex-col w-56 bg-card border-r p-4 gap-1">
+        <aside className="hidden md:flex flex-col w-64 bg-card border-r p-5 gap-2">
           {tabs.map((tab) => {
             const active = location.pathname === tab.path;
             return (
               <button
                 key={tab.path}
                 onClick={() => navigate(tab.path)}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-base font-semibold transition-all duration-200 ${
+                  active 
+                    ? "bg-primary text-primary-foreground shadow-md scale-[1.02]" 
+                    : "text-muted-foreground hover:bg-muted/70 hover:scale-[1.02]"
                 }`}
               >
-                <tab.icon className="h-4 w-4" />
+                <tab.icon className="h-5 w-5" />
                 {tab.label}
               </button>
             );
@@ -108,20 +112,20 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* Mobile bottom nav */}
-      <nav className="md:hidden fixed bottom-0 inset-x-0 bg-card border-t z-40">
-        <div className="flex justify-around py-2">
+      <nav className="md:hidden fixed bottom-0 inset-x-0 bg-card border-t z-40 shadow-lg">
+        <div className="flex justify-around py-3">
           {tabs.map((tab) => {
             const active = location.pathname === tab.path;
             return (
               <button
                 key={tab.path}
                 onClick={() => navigate(tab.path)}
-                className={`flex flex-col items-center gap-0.5 py-1 px-3 rounded-lg transition-colors ${
-                  active ? "text-primary" : "text-muted-foreground"
+                className={`flex flex-col items-center gap-1 py-2 px-4 rounded-xl transition-all duration-200 ${
+                  active ? "text-primary scale-110" : "text-muted-foreground hover:bg-muted/50"
                 }`}
               >
-                <tab.icon className={`h-5 w-5 ${active ? "stroke-[2.5]" : ""}`} />
-                <span className="text-[10px] font-medium">{tab.label}</span>
+                <tab.icon className={`h-6 w-6 ${active ? "stroke-[2.5]" : ""}`} />
+                <span className="text-xs font-semibold">{tab.label}</span>
               </button>
             );
           })}

@@ -91,40 +91,43 @@ export default function RestaurantProfile() {
   };
 
   return (
-    <div className="p-4 max-w-lg mx-auto space-y-4">
-      <h1 className="text-xl font-display font-bold">Restaurant Profile</h1>
+    <div className="p-5 max-w-2xl mx-auto space-y-6">
+      <div>
+        <h1 className="text-2xl font-display font-bold">Restaurant Profile</h1>
+        <p className="text-sm text-muted-foreground mt-1">Manage your restaurant details and settings</p>
+      </div>
 
-      <Card>
-        <CardContent className="p-4 space-y-4">
-          <div className="flex items-center gap-3">
+      <Card className="shadow-lg border-0">
+        <CardContent className="p-6 space-y-6">
+          <div className="flex items-center gap-4">
             {myRestaurant?.imageUrl ? (
-              <div className="relative w-14 h-14 rounded-full overflow-hidden bg-muted">
+              <div className="relative w-20 h-20 rounded-2xl overflow-hidden bg-muted shadow-md">
                 <img src={myRestaurant.imageUrl} alt={myRestaurant.name} className="w-full h-full object-cover" />
                 {myRestaurant && (
                   <button
                     onClick={handleDeleteImage}
-                    className="absolute top-0 right-0 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center hover:bg-destructive/90 transition-colors"
+                    className="absolute top-1 right-1 w-6 h-6 rounded-lg bg-destructive text-destructive-foreground flex items-center justify-center hover:bg-destructive/90 transition-all shadow-md"
                     title="Delete image"
                   >
-                    <X className="h-3 w-3" />
+                    <X className="h-4 w-4" />
                   </button>
                 )}
               </div>
             ) : (
-              <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
-                <Store className="h-6 w-6 text-primary" />
+              <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center shadow-md">
+                <Store className="h-10 w-10 text-primary" />
               </div>
             )}
             <div>
-              <h2 className="font-semibold">{user?.name}</h2>
-              <p className="text-xs text-muted-foreground">{user?.email}</p>
+              <h2 className="text-lg font-bold">{user?.name}</h2>
+              <p className="text-sm text-muted-foreground">{user?.email}</p>
             </div>
           </div>
 
           {myRestaurant && (
-            <div className="space-y-2">
-              <Label className="text-xs">Restaurant Image</Label>
-              <div className="flex gap-2">
+            <div className="space-y-3">
+              <Label className="text-sm font-semibold">Restaurant Image</Label>
+              <div className="flex gap-3">
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -135,7 +138,7 @@ export default function RestaurantProfile() {
                 />
                 <Button
                   variant="outline"
-                  size="sm"
+                  size="lg"
                   className="flex-1 gap-2"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploading}
@@ -144,13 +147,13 @@ export default function RestaurantProfile() {
                     <>Uploading...</>
                   ) : (
                     <>
-                      <Upload className="h-4 w-4" />
+                      <Upload className="h-5 w-5" />
                       {myRestaurant.imageUrl ? 'Change Image' : 'Upload Image'}
                     </>
                   )}
                 </Button>
               </div>
-              <p className="text-[11px] text-muted-foreground">
+              <p className="text-xs text-muted-foreground">
                 Max size: 5MB. Formats: JPG, PNG, GIF, WebP
               </p>
             </div>
@@ -158,33 +161,59 @@ export default function RestaurantProfile() {
 
           {isLoading && <p className="text-sm text-muted-foreground">Loading restaurant profile...</p>}
 
-          <div className="space-y-3">
-            <div className="space-y-1.5">
-              <Label className="text-xs">Restaurant Name</Label>
-              <Input value={myRestaurant?.name || name} onChange={(e) => setName(e.target.value)} className="bg-background" placeholder="Restaurant name" />
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold">Restaurant Name</Label>
+              <Input 
+                value={myRestaurant?.name || name} 
+                onChange={(e) => setName(e.target.value)} 
+                className="bg-background" 
+                placeholder="Restaurant name" 
+              />
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">Address</Label>
-              <Input value={myRestaurant?.address || address} onChange={(e) => setAddress(e.target.value)} className="bg-background" placeholder="Restaurant address" />
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold">Address</Label>
+              <Input 
+                value={myRestaurant?.address || address} 
+                onChange={(e) => setAddress(e.target.value)} 
+                className="bg-background" 
+                placeholder="Restaurant address" 
+              />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs">Status</Label>
-                <Input value={myRestaurant ? (myRestaurant.isOpen ? "Open" : "Closed") : "Not created"} className="bg-background" readOnly />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold">Status</Label>
+                <Input 
+                  value={myRestaurant ? (myRestaurant.isOpen ? "Open" : "Closed") : "Not created"} 
+                  className="bg-background" 
+                  readOnly 
+                />
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">Restaurant ID</Label>
-                <Input value={myRestaurant?._id || "-"} className="bg-background" readOnly />
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold">Restaurant ID</Label>
+                <Input 
+                  value={myRestaurant?._id || "-"} 
+                  className="bg-background text-xs" 
+                  readOnly 
+                />
               </div>
             </div>
           </div>
 
           {myRestaurant ? (
-            <Button className="w-full text-xs font-semibold" onClick={() => toast.info("Update endpoint is not exposed in the current contract")}>
+            <Button 
+              size="lg" 
+              className="w-full text-base font-bold" 
+              onClick={() => toast.info("Update endpoint is not exposed in the current contract")}
+            >
               Save Changes
             </Button>
           ) : (
-            <Button className="w-full text-xs font-semibold" onClick={() => void handleCreate()}>
+            <Button 
+              size="lg" 
+              className="w-full text-base font-bold" 
+              onClick={() => void handleCreate()}
+            >
               Create Restaurant
             </Button>
           )}

@@ -46,55 +46,105 @@ export default function CheckoutPage() {
   };
 
   return (
-    <div className="p-4 max-w-lg mx-auto space-y-4">
-      <h1 className="text-xl font-display font-bold">Checkout</h1>
+    <div className="p-5 max-w-2xl mx-auto space-y-6 pb-8">
+      <div>
+        <h1 className="text-2xl font-display font-bold">Checkout</h1>
+        <p className="text-sm text-muted-foreground mt-1">Complete your order details</p>
+      </div>
 
-      <form onSubmit={handlePlaceOrder} className="space-y-4">
+      <form onSubmit={handlePlaceOrder} className="space-y-5">
         {/* Delivery Address */}
-        <Card>
-          <CardContent className="p-4 space-y-3">
-            <div className="flex items-center gap-2">
-              <MapPin className="h-4 w-4 text-primary" />
-              <h2 className="text-sm font-semibold">Delivery Address</h2>
+        <Card className="shadow-lg border-0">
+          <CardContent className="p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-xl">
+                <MapPin className="h-5 w-5 text-primary" />
+              </div>
+              <h2 className="text-lg font-bold">Delivery Address</h2>
             </div>
-            <Input placeholder="Street address" defaultValue="123 Main St, Apt 4B" className="bg-background" />
-            <div className="grid grid-cols-2 gap-2">
-              <Input placeholder="City" defaultValue="San Francisco" className="bg-background" />
-              <Input placeholder="ZIP Code" defaultValue="94102" className="bg-background" />
+            <Input 
+              placeholder="Street address" 
+              defaultValue="123 Main St, Apt 4B" 
+              className="bg-background" 
+              required
+            />
+            <div className="grid grid-cols-2 gap-3">
+              <Input 
+                placeholder="City" 
+                defaultValue="San Francisco" 
+                className="bg-background" 
+                required
+              />
+              <Input 
+                placeholder="ZIP Code" 
+                defaultValue="94102" 
+                className="bg-background" 
+                required
+              />
             </div>
-            <Input placeholder="Delivery instructions (optional)" className="bg-background" />
+            <Input 
+              placeholder="Delivery instructions (optional)" 
+              className="bg-background" 
+            />
           </CardContent>
         </Card>
 
         {/* Payment */}
-        <Card>
-          <CardContent className="p-4 space-y-3">
-            <div className="flex items-center gap-2">
-              <CreditCard className="h-4 w-4 text-primary" />
-              <h2 className="text-sm font-semibold">Payment</h2>
+        <Card className="shadow-lg border-0">
+          <CardContent className="p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-xl">
+                <CreditCard className="h-5 w-5 text-primary" />
+              </div>
+              <h2 className="text-lg font-bold">Payment</h2>
             </div>
-            <p className="text-sm text-muted-foreground">
-              You will be securely redirected to Stripe to complete your payment after placing the order.
-            </p>
+            <div className="bg-muted/50 rounded-xl p-4">
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                You will be securely redirected to Stripe to complete your payment after placing the order.
+              </p>
+            </div>
           </CardContent>
         </Card>
 
         {/* Order Summary */}
-        <Card>
-          <CardContent className="p-4 space-y-2 text-sm">
-            <h2 className="font-semibold">Order Summary</h2>
-            {items.map((item) => (
-              <div key={item.menuItemId} className="flex justify-between"><span className="text-muted-foreground">{item.name} × {item.quantity}</span><span>LKR {(item.unitPrice * item.quantity).toFixed(2)}</span></div>
-            ))}
+        <Card className="shadow-lg border-0 bg-gradient-to-br from-card to-card/50">
+          <CardContent className="p-6 space-y-4">
+            <h2 className="text-lg font-bold">Order Summary</h2>
+            <div className="space-y-2.5">
+              {items.map((item) => (
+                <div key={item.menuItemId} className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">{item.name} × {item.quantity}</span>
+                  <span className="font-semibold">LKR {(item.unitPrice * item.quantity).toFixed(2)}</span>
+                </div>
+              ))}
+            </div>
             <Separator />
-            <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>LKR {subtotal.toFixed(2)}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">Delivery Fee</span><span>LKR {deliveryFee.toFixed(2)}</span></div>
+            <div className="space-y-2.5 text-base">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Subtotal</span>
+                <span className="font-semibold">LKR {subtotal.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Delivery Fee</span>
+                <span className="font-semibold">LKR {deliveryFee.toFixed(2)}</span>
+              </div>
+            </div>
             <Separator />
-            <div className="flex justify-between font-bold text-base"><span>Total</span><span className="text-primary">LKR {total.toFixed(2)}</span></div>
+            <div className="flex justify-between text-xl font-bold">
+              <span>Total</span>
+              <span className="text-primary">LKR {total.toFixed(2)}</span>
+            </div>
           </CardContent>
         </Card>
 
-        <Button type="submit" className="w-full font-semibold" disabled={submitting || items.length === 0}>{submitting ? "Placing Order..." : "Place Order"}</Button>
+        <Button 
+          type="submit" 
+          size="lg"
+          className="w-full font-bold text-base h-14 rounded-2xl shadow-xl hover:scale-[1.02] transition-all" 
+          disabled={submitting || items.length === 0}
+        >
+          {submitting ? "Placing Order..." : "Place Order"}
+        </Button>
       </form>
     </div>
   );
