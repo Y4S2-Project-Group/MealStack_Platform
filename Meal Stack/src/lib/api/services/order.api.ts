@@ -35,7 +35,7 @@ export const orderApi = {
     return res.data?.orders || (res as unknown as { orders?: Order[] }).orders || [];
   },
 
-  async updateRestaurantOrderStatus(orderId: string, status: 'ASSIGNED_TO_RIDER' | 'PICKED_UP' | 'DELIVERED') {
+  async updateRestaurantOrderStatus(orderId: string, status: 'ASSIGNED_TO_RIDER' | 'READY_FOR_PICKUP' | 'PICKED_UP' | 'DELIVERED') {
     const res = await apiClient.patch<{ order: Order }>(`/orders/${orderId}/restaurant-status`, { status });
     return res.data?.order || (res as unknown as { order?: Order }).order;
   },

@@ -42,7 +42,7 @@ async function createCheckoutSession(orderId, amount, currency) {
       },
     ],
     metadata:    { orderId },
-    success_url: `${env.checkoutSuccessUrl}?session_id={CHECKOUT_SESSION_ID}`,
+    success_url: `${env.checkoutSuccessUrl}?order_id=${orderId}&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url:  env.checkoutCancelUrl,
   });
 

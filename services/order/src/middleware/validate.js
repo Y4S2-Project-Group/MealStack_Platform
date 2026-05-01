@@ -20,22 +20,22 @@ const createOrderSchema = z.object({
 // ── PATCH /orders/:id/status ──────────────────────────────────────────────────
 const updateStatusSchema = z.object({
   status: z.enum(
-    ['CREATED', 'PENDING_PAYMENT', 'PAID', 'ASSIGNED_TO_RIDER', 'PICKED_UP', 'DELIVERED'],
+    ['CREATED', 'PENDING_PAYMENT', 'PAID', 'ASSIGNED_TO_RIDER', 'READY_FOR_PICKUP', 'PICKED_UP', 'DELIVERED'],
     { errorMap: () => ({ message: 'Invalid status value' }) }
   ),
 });
 
 // ── PATCH /orders/:id/restaurant-status ─────────────────────────────────────
 const restaurantUpdateStatusSchema = z.object({
-  status: z.enum(['ASSIGNED_TO_RIDER', 'PICKED_UP', 'DELIVERED'], {
-    errorMap: () => ({ message: 'status must be ASSIGNED_TO_RIDER, PICKED_UP, or DELIVERED' }),
+  status: z.enum(['ASSIGNED_TO_RIDER', 'READY_FOR_PICKUP', 'PICKED_UP', 'DELIVERED'], {
+    errorMap: () => ({ message: 'status must be ASSIGNED_TO_RIDER, READY_FOR_PICKUP, PICKED_UP, or DELIVERED' }),
   }),
 });
 
 // ── POST /orders/:id/delivery/status ─────────────────────────────────────────
 const deliveryStatusSchema = z.object({
-  status: z.enum(['PICKED_UP', 'DELIVERED'], {
-    errorMap: () => ({ message: 'status must be PICKED_UP or DELIVERED' }),
+  status: z.enum(['ASSIGNED_TO_RIDER', 'PICKED_UP', 'DELIVERED'], {
+    errorMap: () => ({ message: 'status must be ASSIGNED_TO_RIDER, PICKED_UP or DELIVERED' }),
   }),
   riderId: z.string().min(1).optional(),
 });

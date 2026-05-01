@@ -95,6 +95,16 @@ async function acceptDelivery(req, res, next) {
       riderId:  delivery.riderId,
     });
 
+    // Notify Order Service so order status moves to ASSIGNED_TO_RIDER
+    try {
+      await notifyDeliveryStatus(delivery.orderId, 'ASSIGNED_TO_RIDER', delivery.riderId);
+    } catch (notifyErr) {
+      logger.error('[rider] Failed to notify Order Service of assignment', {
+        orderId: delivery.orderId,
+        error:   notifyErr.message,
+      });
+    }
+
     return sendSuccess(res, req, {
       status: 200,
       message: 'Delivery accepted',
