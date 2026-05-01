@@ -6,6 +6,7 @@
     { "source": "/orders/:path*", "destination": "http://mealstack-alb-1222463843.ap-south-1.elb.amazonaws.com/orders/:path*" },
     { "source": "/deliveries/:path*", "destination": "http://mealstack-alb-1222463843.ap-south-1.elb.amazonaws.com/deliveries/:path*" },
     { "source": "/payments/:path*", "destination": "http://mealstack-alb-1222463843.ap-south-1.elb.amazonaws.com/payments/:path*" },
-    { "source": "/health", "destination": "http://mealstack-alb-1222463843.ap-south-1.elb.amazonaws.com/health" }
+    { "source": "/health", "destination": "http://mealstack-alb-1222463843.ap-south-1.elb.amazonaws.com/health" },
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
