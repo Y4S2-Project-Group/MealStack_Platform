@@ -11,7 +11,7 @@
     "containerDefinitions": [
         {
             "name": "payment",
-            "image": "945488516083.dkr.ecr.ap-south-1.amazonaws.com/mealstack-auth:e912493836013882022dd6dfb4901611528a5ec6",
+            "image": "945488516083.dkr.ecr.ap-south-1.amazonaws.com/mealstack-payment:9dc6ff5358c45049f783a1a857ede1be2f385109",
             "cpu": 0,
             "portMappings": [
                 {
