@@ -130,7 +130,10 @@ async function getOrder(req, res, next) {
 
     const isOwner = order.userId === req.user.userId;
     const isAdmin = req.user.role === 'admin';
-    if (!isOwner && !isAdmin) {
+    const isAssignedRider = req.user.role === 'rider' && order.rider?.riderId === req.user.userId;
+    const isRestaurantOwner = req.user.role === 'restaurantAdmin'; // Allow restaurant to view their orders
+
+    if (!isOwner && !isAdmin && !isAssignedRider && !isRestaurantOwner) {
       return sendError(res, req, {
         status: 403,
         code: 'FORBIDDEN',
