@@ -77,23 +77,7 @@ router.post(
   createMenuItem
 );
 
-routerMenu Item Image Upload ────────────────────────────────────────────────────
-router.post(
-  '/restaurants/:id/menu/items/:itemId/upload-image',
-  requireAuth,
-  requireRole('restaurantAdmin'),
-  upload.single('image'),
-  uploadMenuItemImage
-);
-
-router.delete(
-  '/restaurants/:id/menu/items/:itemId/image',
-  requireAuth,
-  requireRole('restaurantAdmin'),
-  deleteMenuItemImage
-);
-
-// ── .patch(
+router.patch(
   '/restaurants/:id/menu/items/:itemId',
   requireAuth,
   requireRole('restaurantAdmin'),
@@ -108,6 +92,22 @@ router.delete(
 );
 
 router.get('/restaurants/:id/menu/items', listMenuItems);
+
+// ── Menu Item Image Upload ────────────────────────────────────────────────────
+router.post(
+  '/restaurants/:id/menu/items/:itemId/upload-image',
+  requireAuth,
+  requireRole('restaurantAdmin'),
+  upload.single('image'),
+  uploadMenuItemImage
+);
+
+router.delete(
+  '/restaurants/:id/menu/items/:itemId/image',
+  requireAuth,
+  requireRole('restaurantAdmin'),
+  deleteMenuItemImage
+);
 
 // ── Integration helper (called by Order Service) ──────────────────────────────
 router.post('/restaurants/:id/menu/validate', requireInternalKey, validateMenuItems);
