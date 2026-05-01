@@ -39,4 +39,19 @@ export const orderApi = {
     const res = await apiClient.patch<{ order: Order }>(`/orders/${orderId}/restaurant-status`, { status });
     return res.data?.order || (res as unknown as { order?: Order }).order;
   },
+
+  async acceptOrder(orderId: string) {
+    const res = await apiClient.post<{ order: Order }>(`/orders/${orderId}/restaurant/accept`, {});
+    return res.data?.order || (res as unknown as { order?: Order }).order;
+  },
+
+  async rejectOrder(orderId: string, reason: string) {
+    const res = await apiClient.post<{ order: Order }>(`/orders/${orderId}/restaurant/reject`, { reason });
+    return res.data?.order || (res as unknown as { order?: Order }).order;
+  },
+
+  async proceedWithOrder(orderId: string) {
+    const res = await apiClient.post<{ order: Order }>(`/orders/${orderId}/restaurant/proceed`, {});
+    return res.data?.order || (res as unknown as { order?: Order }).order;
+  },
 };

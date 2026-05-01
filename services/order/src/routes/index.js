@@ -41,6 +41,11 @@ router.get('/orders/restaurant/:restaurantId', requireAuth, requireRole('restaur
 router.get('/orders/:id',  requireAuth, orderCtrl.getOrder);
 router.patch('/orders/:id/restaurant-status', requireAuth, requireRole('restaurantAdmin'), orderCtrl.updateRestaurantOrderStatus);
 
+// ── Restaurant order management ───────────────────────────────────────────────
+router.post('/orders/:id/restaurant/accept',  requireAuth, requireRole('restaurantAdmin'), orderCtrl.acceptOrder);
+router.post('/orders/:id/restaurant/reject',  requireAuth, requireRole('restaurantAdmin'), orderCtrl.rejectOrder);
+router.post('/orders/:id/restaurant/proceed', requireAuth, requireRole('restaurantAdmin'), orderCtrl.proceedWithOrder);
+
 // ── Internal / admin route ────────────────────────────────────────────────────
 router.patch('/orders/:id/status', requireInternalKey, orderCtrl.updateOrderStatus);
 

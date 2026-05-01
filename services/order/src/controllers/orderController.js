@@ -271,16 +271,8 @@ async function paymentConfirmed(req, res, next) {
 
     logger.info('[order] Payment confirmed', { orderId: order._id });
 
-    // Notify Rider Service to create a delivery job
-    try {
-      await createDeliveryJob(order._id.toString(), order.restaurantId, order.userId);
-    } catch (riderErr) {
-      // Log but don't fail the payment-confirmed response; rider dispatch can be retried
-      logger.error('[order] Rider job creation failed after payment', {
-        orderId: order._id,
-        error:   riderErr.message,
-      });
-    }
+    // Note: Delivery job is now created AFTER restaurant accepts the order
+    // No automatic rider assignment - restaurant must accept first
 
     return sendSuccess(res, req, {
       status: 200,
@@ -339,6 +331,138 @@ async function updateDeliveryStatus(req, res, next) {
   }
 }
 
+// ── POST /orders/:id/restaurant/accept ──────────────────────────────────────
+// Restaurant accepts the order after payment
+async function acceptOrder(req, res, next) {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return sendError(res, req, {
+        status: 404,
+        code: 'ORDER_NOT_FOUND',
+        message: 'Order not found',
+      });
+    }
+
+    if (order.status !== 'PAID') {
+      return sendError(res, req, {
+        status: 400,
+        code: 'INVALID_ORDER_STATUS',
+        message: 'Order must be in PAID status to accept',
+      });
+    }
+
+    order.status = 'RESTAURANT_ACCEPTED';
+    order.restaurant.acceptedAt = new Date();
+    await order.save();
+
+    logger.info('[order] Restaurant accepted order', { orderId: order._id, restaurantId: order.restaurantId });
+
+    return sendSuccess(res, req, {
+      status: 200,
+      message: 'Order accepted',
+      data: { order },
+      legacy: { order },
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// ── POST /orders/:id/restaurant/reject ──────────────────────────────────────
+// Restaurant rejects the order
+async function rejectOrder(req, res, next) {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return sendError(res, req, {
+        status: 404,
+        code: 'ORDER_NOT_FOUND',
+        message: 'Order not found',
+      });
+    }
+
+    if (order.status !== 'PAID') {
+      return sendError(res, req, {
+        status: 400,
+        code: 'INVALID_ORDER_STATUS',
+        message: 'Order must be in PAID status to reject',
+      });
+    }
+
+    const { reason } = req.body;
+
+    order.status = 'RESTAURANT_REJECTED';
+    order.restaurant.rejectedAt = new Date();
+    order.restaurant.rejectionReason = reason || 'No reason provided';
+    await order.save();
+
+    logger.info('[order] Restaurant rejected order', { 
+      orderId: order._id, 
+      restaurantId: order.restaurantId,
+      reason: order.restaurant.rejectionReason 
+    });
+
+    return sendSuccess(res, req, {
+      status: 200,
+      message: 'Order rejected',
+      data: { order },
+      legacy: { order },
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// ── POST /orders/:id/restaurant/proceed ─────────────────────────────────────
+// Restaurant proceeds with order - creates delivery job
+async function proceedWithOrder(req, res, next) {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return sendError(res, req, {
+        status: 404,
+        code: 'ORDER_NOT_FOUND',
+        message: 'Order not found',
+      });
+    }
+
+    if (order.status !== 'RESTAURANT_ACCEPTED') {
+      return sendError(res, req, {
+        status: 400,
+        code: 'INVALID_ORDER_STATUS',
+        message: 'Order must be in RESTAURANT_ACCEPTED status to proceed',
+      });
+    }
+
+    // Create delivery job in Rider Service
+    try {
+      await createDeliveryJob(order._id.toString(), order.restaurantId, order.userId);
+      logger.info('[order] Delivery job created after restaurant proceed', { orderId: order._id });
+    } catch (riderErr) {
+      logger.error('[order] Rider job creation failed', {
+        orderId: order._id,
+        error: riderErr.message,
+      });
+      return sendError(res, req, {
+        status: 500,
+        code: 'DELIVERY_JOB_CREATION_FAILED',
+        message: 'Failed to create delivery job',
+        details: { error: riderErr.message },
+      });
+    }
+
+    return sendSuccess(res, req, {
+      status: 200,
+      message: 'Order proceeded - delivery job created',
+      data: { order },
+      legacy: { order },
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
   createOrder,
   getMyOrders,
@@ -348,4 +472,7 @@ module.exports = {
   updateRestaurantOrderStatus,
   paymentConfirmed,
   updateDeliveryStatus,
+  acceptOrder,
+  rejectOrder,
+  proceedWithOrder,
 };

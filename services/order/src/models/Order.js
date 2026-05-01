@@ -6,6 +6,8 @@ const ORDER_STATUSES = [
   'CREATED',
   'PENDING_PAYMENT',
   'PAID',
+  'RESTAURANT_ACCEPTED',
+  'RESTAURANT_REJECTED',
   'ASSIGNED_TO_RIDER',
   'READY_FOR_PICKUP',
   'PICKED_UP',
@@ -34,6 +36,11 @@ const orderSchema = new mongoose.Schema(
       provider:          { type: String, default: 'stripe' },
       checkoutSessionId: { type: String },
       paymentStatus:     { type: String, enum: ['pending', 'paid', 'failed'], default: 'pending' },
+    },
+    restaurant: {
+      acceptedAt: { type: Date },
+      rejectedAt: { type: Date },
+      rejectionReason: { type: String },
     },
     rider: {
       riderId:    { type: String },

@@ -11,7 +11,9 @@ import { toast } from "sonner";
 
 const statusConfig: Record<string, { label: string; color: string; icon: typeof Clock }> = {
   PENDING_PAYMENT: { label: "Awaiting Payment",   color: "bg-yellow-100 text-yellow-800", icon: CreditCard },
-  PAID:            { label: "New Order — Preparing", color: "bg-blue-100 text-blue-800", icon: ChefHat },
+  PAID:            { label: "New Order — Action Required", color: "bg-blue-100 text-blue-800", icon: ChefHat },
+  RESTAURANT_ACCEPTED: { label: "Accepted — Ready to Proceed", color: "bg-green-100 text-green-800", icon: ChefHat },
+  RESTAURANT_REJECTED: { label: "Rejected", color: "bg-red-100 text-red-800", icon: Clock },
   ASSIGNED_TO_RIDER: { label: "Rider Assigned",   color: "bg-purple-100 text-purple-800", icon: Truck },
   READY_FOR_PICKUP:  { label: "Ready for Pickup!", color: "bg-green-100 text-green-800", icon: PackageCheck },
   PICKED_UP:       { label: "Picked Up by Rider", color: "bg-orange-100 text-orange-800", icon: Truck },
@@ -21,11 +23,19 @@ const statusConfig: Record<string, { label: string; color: string; icon: typeof 
 function OrderCard({
   order,
   onMarkReady,
+  onAccept,
+  onReject,
+  onProceed,
 }: {
   order: Order;
   onMarkReady?: (orderId: string) => Promise<void>;
+  onAccept?: (orderId: string) => Promise<void>;
+  onReject?: (orderId: string, reason?: string) => Promise<void>;
+  onProceed?: (orderId: string) => Promise<void>;
 }) {
   const [loading, setLoading] = useState(false);
+  const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
   const config = statusConfig[order.status] || { label: order.status, color: "bg-gray-100 text-gray-800", icon: Clock };
   const Icon = config.icon;
 
@@ -34,6 +44,38 @@ function OrderCard({
     setLoading(true);
     try {
       await onMarkReady(order._id);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAccept = async () => {
+    if (!onAccept) return;
+    setLoading(true);
+    try {
+      await onAccept(order._id);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleReject = async () => {
+    if (!onReject) return;
+    setLoading(true);
+    try {
+      await onReject(order._id, rejectReason);
+      setShowRejectDialog(false);
+      setRejectReason("");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleProceed = async () => {
+    if (!onProceed) return;
+    setLoading(true);
+    try {
+      await onProceed(order._id);
     } finally {
       setLoading(false);
     }
@@ -71,9 +113,68 @@ function OrderCard({
 
         {/* Status-specific actions */}
         {order.status === "PAID" && (
-          <p className="text-[11px] text-blue-600 bg-blue-50 p-2 rounded">
-            A rider will be auto-assigned from the available pool. Start preparing the order!
-          </p>
+          <div className="space-y-2">
+            <p className="text-[11px] text-blue-600 bg-blue-50 p-2 rounded">
+              New order received! Review the items and accept or reject this order.
+            </p>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                className="flex-1 gap-2 bg-green-600 hover:bg-green-700 text-white"
+                disabled={loading}
+                onClick={handleAccept}
+              >
+                <CheckCircle2 className="h-4 w-4" />
+                {loading ? "Processing..." : "Accept Order"}
+              </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                className="flex-1"
+                disabled={loading}
+                onClick={() => setShowRejectDialog(true)}
+              >
+                Reject
+              </Button>
+            </div>
+            {showRejectDialog && (
+              <div className="space-y-2 p-3 bg-gray-50 rounded border">
+                <label className="text-xs font-medium">Reason for rejection:</label>
+                <input
+                  type="text"
+                  className="w-full px-2 py-1 text-xs border rounded"
+                  placeholder="e.g., Out of ingredients"
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                />
+                <div className="flex gap-2">
+                  <Button size="sm" variant="destructive" className="flex-1" onClick={handleReject} disabled={loading}>
+                    {loading ? "Rejecting..." : "Confirm Reject"}
+                  </Button>
+                  <Button size="sm" variant="outline" className="flex-1" onClick={() => setShowRejectDialog(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {order.status === "RESTAURANT_ACCEPTED" && (
+          <div className="space-y-2">
+            <p className="text-[11px] text-green-600 bg-green-50 p-2 rounded">
+              Order accepted! Click below to assign a rider and start preparation.
+            </p>
+            <Button
+              size="sm"
+              className="w-full gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+              disabled={loading}
+              onClick={handleProceed}
+            >
+              <Truck className="h-4 w-4" />
+              {loading ? "Processing..." : "Proceed & Assign Rider"}
+            </Button>
+          </div>
         )}
 
         {order.status === "ASSIGNED_TO_RIDER" && (
@@ -140,7 +241,37 @@ export default function RestaurantOrders() {
     }
   };
 
-  const paidOrders = restaurantOrders.filter((o) => o.status !== "PENDING_PAYMENT");
+  const handleAccept = async (orderId: string) => {
+    try {
+      await orderApi.acceptOrder(orderId);
+      await queryClient.invalidateQueries({ queryKey: ["restaurant-orders", selectedRestaurant?._id] });
+      toast.success("Order accepted!");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to accept order");
+    }
+  };
+
+  const handleReject = async (orderId: string, reason?: string) => {
+    try {
+      await orderApi.rejectOrder(orderId, reason || "No reason provided");
+      await queryClient.invalidateQueries({ queryKey: ["restaurant-orders", selectedRestaurant?._id] });
+      toast.error("Order rejected");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to reject order");
+    }
+  };
+
+  const handleProceed = async (orderId: string) => {
+    try {
+      await orderApi.proceedWithOrder(orderId);
+      await queryClient.invalidateQueries({ queryKey: ["restaurant-orders", selectedRestaurant?._id] });
+      toast.success("Rider assigned! Order is now in preparation.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to proceed with order");
+    }
+  };
+
+  const paidOrders = restaurantOrders.filter((o) => o.status !== "PENDING_PAYMENT" && o.status !== "RESTAURANT_REJECTED");
   const activeOrders = paidOrders.filter((o) => !["DELIVERED"].includes(o.status));
   const completedOrders = paidOrders.filter((o) => o.status === "DELIVERED");
 
@@ -167,7 +298,14 @@ export default function RestaurantOrders() {
         )}
         <div className="space-y-3">
           {activeOrders.map((order) => (
-            <OrderCard key={order._id} order={order} onMarkReady={handleMarkReady} />
+            <OrderCard 
+              key={order._id} 
+              order={order} 
+              onMarkReady={handleMarkReady}
+              onAccept={handleAccept}
+              onReject={handleReject}
+              onProceed={handleProceed}
+            />
           ))}
         </div>
       </div>
@@ -186,7 +324,7 @@ export default function RestaurantOrders() {
 
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
         <ClipboardList className="h-3.5 w-3.5" />
-        Workflow: Paid → Rider assigned → Mark Ready → Rider picks up → Delivered
+        Workflow: Paid → Accept/Reject → Proceed & Assign Rider → Mark Ready → Rider picks up → Delivered
       </div>
     </div>
   );

@@ -40,11 +40,20 @@ export interface Order {
   restaurantId: string;
   items: OrderItem[];
   total: number;
-  status: 'CREATED' | 'PENDING_PAYMENT' | 'PAID' | 'ASSIGNED_TO_RIDER' | 'PICKED_UP' | 'DELIVERED';
+  status: 'CREATED' | 'PENDING_PAYMENT' | 'PAID' | 'RESTAURANT_ACCEPTED' | 'RESTAURANT_REJECTED' | 'ASSIGNED_TO_RIDER' | 'READY_FOR_PICKUP' | 'PICKED_UP' | 'DELIVERED';
   createdAt: string;
   payment?: {
     checkoutSessionId?: string;
     paymentStatus?: 'pending' | 'paid' | 'failed';
+  };
+  restaurant?: {
+    acceptedAt?: string;
+    rejectedAt?: string;
+    rejectionReason?: string;
+  };
+  rider?: {
+    riderId?: string;
+    assignedAt?: string;
   };
 }
 
