@@ -15,6 +15,7 @@ export interface Restaurant {
   address: string;
   isOpen: boolean;
   ownerUserId?: string | null;
+  imageUrl?: string;
 }
 
 export interface MenuItem {
@@ -24,6 +25,7 @@ export interface MenuItem {
   description?: string;
   price: number;
   isAvailable: boolean;
+  imageUrl?: string;
 }
 
 export interface OrderItem {

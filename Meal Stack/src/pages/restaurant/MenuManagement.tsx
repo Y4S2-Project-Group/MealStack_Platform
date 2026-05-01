@@ -1,11 +1,11 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Pencil, Trash2, Search, UtensilsCrossed, Package } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, UtensilsCrossed, Package, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { restaurantApi } from "@/lib/api";
@@ -18,6 +18,8 @@ export default function MenuManagement() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
+  const [uploadingImageFor, setUploadingImageFor] = useState<string | null>(null);
+  const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
 
   const { data: restaurants = [], isLoading: loadingRestaurants } = useQuery({
     queryKey: ["restaurants"],
@@ -109,6 +111,50 @@ export default function MenuManagement() {
       toast.success("Item deleted");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to delete item");
+    }
+  };
+
+  const handleImageUpload = async (itemId: string, file: File) => {
+    if (!selectedRestaurant?._id) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image size must be less than 5MB');
+      return;
+    }
+
+    setUploadingImageFor(itemId);
+    try {
+      await restaurantApi.uploadMenuItemImage(selectedRestaurant._id, itemId, file);
+      await queryClient.invalidateQueries({ queryKey: ["restaurant-menu", selectedRestaurant._id] });
+      toast.success("Menu item image updated");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to upload image");
+    } finally {
+      setUploadingImageFor(null);
+      if (fileInputRefs.current[itemId]) {
+        fileInputRefs.current[itemId]!.value = '';
+      }
+    }
+  };
+
+  const handleDeleteImage = async (itemId: string) => {
+    if (!selectedRestaurant?._id) return;
+    
+    if (!window.confirm('Delete menu item image?')) return;
+
+    try {
+      await restaurantApi.deleteMenuItemImage(selectedRestaurant._id, itemId);
+      await queryClient.invalidateQueries({ queryKey: ["restaurant-menu", selectedRestaurant._id] });
+      toast.success("Menu item image deleted");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to delete image");
     }
   };
 
@@ -223,8 +269,44 @@ export default function MenuManagement() {
         {filtered.map((item) => (
           <Card key={item._id} className={`overflow-hidden border-0 shadow-sm hover:shadow-md transition-all group ${!item.isAvailable ? "opacity-60" : "hover:-translate-y-0.5"}`}>
             <CardContent className="p-0 flex">
-              <div className="relative w-28 h-28 shrink-0 bg-muted flex items-center justify-center">
-                <span className="text-[10px] text-muted-foreground">No image</span>
+              <div className="relative w-28 h-28 shrink-0 bg-muted flex items-center justify-center group/image">
+                {item.imageUrl ? (
+                  <>
+                    <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                    <button
+                      onClick={() => handleDeleteImage(item._id)}
+                      className="absolute top-1 right-1 w-6 h-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover/image:opacity-100 hover:bg-destructive/90 transition-opacity"
+                      title="Delete image"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </>
+                ) : (
+                  <span className="text-[10px] text-muted-foreground">No image</span>
+                )}
+                <input
+                  ref={(el) => (fileInputRefs.current[item._id] = el)}
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleImageUpload(item._id, file);
+                  }}
+                  className="hidden"
+                  id={`menu-item-image-${item._id}`}
+                />
+                <button
+                  onClick={() => fileInputRefs.current[item._id]?.click()}
+                  disabled={uploadingImageFor === item._id}
+                  className="absolute bottom-1 right-1 w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center opacity-0 group-hover/image:opacity-100 hover:bg-primary/90 transition-opacity disabled:opacity-50"
+                  title={item.imageUrl ? "Change image" : "Upload image"}
+                >
+                  {uploadingImageFor === item._id ? (
+                    <span className="text-[8px]">...</span>
+                  ) : (
+                    <Upload className="h-3 w-3" />
+                  )}
+                </button>
               </div>
               <div className="flex-1 p-3.5 flex flex-col justify-between min-w-0">
                 <div>

@@ -18,6 +18,13 @@ const {
   listMenuItems,
   validateMenuItems,
 } = require('../controllers/menuController');
+const {
+  uploadRestaurantImage,
+  uploadMenuItemImage,
+  deleteRestaurantImage,
+  deleteMenuItemImage,
+} = require('../controllers/uploadController');
+const upload = require('../middleware/upload');
 
 const router = Router();
 
@@ -46,6 +53,22 @@ router.get('/restaurants', listRestaurants);
 
 router.get('/restaurants/:id', getRestaurant);
 
+// ── Restaurant Image Upload ───────────────────────────────────────────────────
+router.post(
+  '/restaurants/:id/upload-image',
+  requireAuth,
+  requireRole('restaurantAdmin'),
+  upload.single('image'),
+  uploadRestaurantImage
+);
+
+router.delete(
+  '/restaurants/:id/image',
+  requireAuth,
+  requireRole('restaurantAdmin'),
+  deleteRestaurantImage
+);
+
 // ── Menu Items ────────────────────────────────────────────────────────────────
 router.post(
   '/restaurants/:id/menu/items',
@@ -54,7 +77,23 @@ router.post(
   createMenuItem
 );
 
-router.patch(
+routerMenu Item Image Upload ────────────────────────────────────────────────────
+router.post(
+  '/restaurants/:id/menu/items/:itemId/upload-image',
+  requireAuth,
+  requireRole('restaurantAdmin'),
+  upload.single('image'),
+  uploadMenuItemImage
+);
+
+router.delete(
+  '/restaurants/:id/menu/items/:itemId/image',
+  requireAuth,
+  requireRole('restaurantAdmin'),
+  deleteMenuItemImage
+);
+
+// ── .patch(
   '/restaurants/:id/menu/items/:itemId',
   requireAuth,
   requireRole('restaurantAdmin'),

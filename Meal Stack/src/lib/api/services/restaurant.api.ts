@@ -39,4 +39,34 @@ export const restaurantApi = {
   async deleteMenuItem(restaurantId: string, itemId: string) {
     await apiClient.delete(`/restaurants/${restaurantId}/menu/items/${itemId}`);
   },
+
+  async uploadRestaurantImage(restaurantId: string, file: File) {
+    const formData = new FormData();
+    formData.append('image', file);
+    const res = await apiClient.post<{ imageUrl: string }>(`/restaurants/${restaurantId}/upload-image`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return res.data?.imageUrl || (res as unknown as { imageUrl?: string }).imageUrl;
+  },
+
+  async deleteRestaurantImage(restaurantId: string) {
+    await apiClient.delete(`/restaurants/${restaurantId}/image`);
+  },
+
+  async uploadMenuItemImage(restaurantId: string, itemId: string, file: File) {
+    const formData = new FormData();
+    formData.append('image', file);
+    const res = await apiClient.post<{ imageUrl: string }>(`/restaurants/${restaurantId}/menu/items/${itemId}/upload-image`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return res.data?.imageUrl || (res as unknown as { imageUrl?: string }).imageUrl;
+  },
+
+  async deleteMenuItemImage(restaurantId: string, itemId: string) {
+    await apiClient.delete(`/restaurants/${restaurantId}/menu/items/${itemId}/image`);
+  },
 };
