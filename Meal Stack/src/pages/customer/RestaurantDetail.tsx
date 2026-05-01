@@ -4,16 +4,19 @@ import { restaurantApi } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Star, Clock, Plus, ChevronRight } from "lucide-react";
+import { ArrowLeft, Star, Clock, Plus, ChevronRight, ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import { useCart } from "@/contexts/CartContext";
+import type { Restaurant, MenuItem } from "@/lib/api/contracts";
 
-function imageForRestaurant(id: string) {
-  return `https://picsum.photos/seed/restaurant-${id}/1200/500`;
+function getRestaurantImage(restaurant: { _id: string; imageUrl?: string }) {
+  // Use Cloudinary image if available, otherwise fallback to placeholder
+  return restaurant.imageUrl || `https://picsum.photos/seed/restaurant-${restaurant._id}/1200/500`;
 }
 
-function imageForMenu(id: string) {
-  return `https://picsum.photos/seed/menu-${id}/400/300`;
+function getMenuItemImage(item: { _id: string; imageUrl?: string }) {
+  // Use Cloudinary image if available, otherwise fallback to placeholder
+  return item.imageUrl || `https://picsum.photos/seed/menu-${item._id}/400/300`;
 }
 
 export default function RestaurantDetail() {
@@ -60,7 +63,7 @@ export default function RestaurantDetail() {
       {/* Hero Banner */}
       <div className="relative">
         <img
-          src={imageForRestaurant(restaurant._id)}
+          src={getRestaurantImage(restaurant)}
           alt={restaurant.name}
           className="w-full h-56 md:h-64 object-cover"
         />
@@ -123,7 +126,7 @@ export default function RestaurantDetail() {
             <CardContent className="p-0 flex">
               <div className="relative w-28 h-28 md:w-32 md:h-32 shrink-0">
                 <img
-                  src={imageForMenu(item._id)}
+                  src={getMenuItemImage(item)}
                   alt={item.name}
                   className="w-full h-full object-cover"
                 />

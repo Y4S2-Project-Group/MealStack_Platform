@@ -5,7 +5,7 @@ import { restaurantApi } from "@/lib/api";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, Star, Clock, MapPin, ArrowRight, Sparkles } from "lucide-react";
+import { Search, Star, Clock, MapPin, ArrowRight, Sparkles, UtensilsCrossed } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const foodCategories = [
@@ -19,8 +19,9 @@ const foodCategories = [
   { name: "BBQ", emoji: "🍖" },
 ];
 
-function imageForRestaurant(id: string) {
-  return `https://picsum.photos/seed/restaurant-${id}/800/400`;
+function getRestaurantImage(restaurant: { _id: string; imageUrl?: string }) {
+  // Use Cloudinary image if available, otherwise fallback to placeholder
+  return restaurant.imageUrl || `https://picsum.photos/seed/restaurant-${restaurant._id}/800/400`;
 }
 
 const promos = [
@@ -134,7 +135,7 @@ export default function CustomerHome() {
                   onClick={() => navigate(`/customer/restaurant/${r._id}`)}
                 >
                   <div className="relative">
-                    <img src={imageForRestaurant(r._id)} alt={r.name} className="w-full h-28 object-cover" />
+                    <img src={getRestaurantImage(r)} alt={r.name} className="w-full h-28 object-cover" />
                     <div className="absolute top-2 left-2 bg-card/90 backdrop-blur-sm text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
                       <Star className="h-2.5 w-2.5 fill-primary text-primary" />4.6
                     </div>
@@ -165,7 +166,7 @@ export default function CustomerHome() {
               >
                 <div className="relative">
                   <img
-                    src={imageForRestaurant(r._id)}
+                    src={getRestaurantImage(r)}
                     alt={r.name}
                     className="w-full h-40 object-cover group-hover:scale-[1.03] transition-transform duration-500"
                   />
