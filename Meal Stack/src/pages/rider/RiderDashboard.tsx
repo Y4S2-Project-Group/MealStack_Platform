@@ -51,11 +51,17 @@ export default function RiderDashboard() {
 
   // Sync activeDelivery state whenever localStorage changes (e.g. after accept)
   useEffect(() => {
-    const stored = loadActiveDelivery();
-    if (stored?.orderId !== activeDelivery?.orderId) {
-      setActiveDelivery(stored);
-    }
-  });
+    const handleStorageChange = () => {
+      const stored = loadActiveDelivery();
+      if (stored?.orderId !== activeDelivery?.orderId) {
+        setActiveDelivery(stored);
+      }
+    };
+
+    // Listen for storage events from other tabs/windows
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [activeDelivery?.orderId]);
 
   // Fetch available delivery jobs (only shown when no active delivery)
   const { data: deliveryRequests = [], isLoading } = useQuery({
@@ -87,12 +93,16 @@ export default function RiderDashboard() {
   const handleAccept = async (orderId: string) => {
     try {
       const accepted = await riderApi.acceptDelivery(orderId);
+      console.log('Delivery accepted:', accepted);
       saveActiveDelivery(accepted);
       setActiveDelivery(accepted);
       toast.success("Delivery accepted!");
       await queryClient.invalidateQueries({ queryKey: ["rider-available-deliveries"] });
+      // Force order data fetch
+      await queryClient.invalidateQueries({ queryKey: ["rider-active-order", orderId] });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Unable to accept delivery");
+      console.error('Accept delivery error:', error);
     }
   };
 
@@ -146,6 +156,15 @@ export default function RiderDashboard() {
   return (
     <div className="p-4 max-w-3xl mx-auto space-y-5 pb-8">
       <h1 className="text-xl font-display font-bold">Rider Dashboard</h1>
+
+      {/* Debug info - remove in production */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="text-xs text-muted-foreground bg-muted p-2 rounded">
+          Active Delivery: {activeDelivery ? `Order ${activeDelivery.orderId.slice(-6)}` : 'None'} | 
+          Delivered: {String(isDelivered)} | 
+          Live Status: {liveStatus || 'Loading...'}
+        </div>
+      )}
 
       {/* ── Active Delivery Card ─────────────────────────────────────────── */}
       {activeDelivery && !isDelivered && (
@@ -219,7 +238,7 @@ export default function RiderDashboard() {
             </div>
 
             {/* Order items */}
-            {activeOrder && (
+            {activeOrder ? (
               <div className="bg-muted/50 rounded-lg p-3 space-y-1 text-xs">
                 {activeOrder.items.map((item) => (
                   <div key={item.menuItemId} className="flex justify-between text-muted-foreground">
@@ -231,6 +250,10 @@ export default function RiderDashboard() {
                   <span>Total</span>
                   <span className="text-primary">${activeOrder.total.toFixed(2)}</span>
                 </div>
+              </div>
+            ) : (
+              <div className="bg-muted/50 rounded-lg p-3 text-xs text-center text-muted-foreground">
+                <div className="animate-pulse">Loading order details...</div>
               </div>
             )}
 
